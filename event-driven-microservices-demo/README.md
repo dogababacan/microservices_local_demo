@@ -33,6 +33,8 @@ order.created -> inventory.reserved -> payment.completed -> notification
 
 The main lesson: services do not directly call each other after order creation. They publish and consume events through RabbitMQ.
 
+Analytics Service is added from the side. It listens to the same event notes without changing the existing checkout services.
+
 ## Quick Start
 
 Start the project:
@@ -41,15 +43,21 @@ Start the project:
 docker compose up --build
 ```
 
-Then open another terminal and send a successful checkout request:
+Then open the web UI:
+
+```text
+http://localhost:3000
+```
+
+Click one of the scenario buttons, send the checkout request, and watch the Docker Compose logs in the first terminal.
+
+You can also send the same request from another terminal with curl:
 
 ```bash
 curl -X POST http://localhost:3000/checkout \
   -H "Content-Type: application/json" \
   -d '{"userId":"student-1","productId":"pencil","quantity":2}'
 ```
-
-Then watch the Docker Compose logs in the first terminal.
 
 ## Main Analogy: RabbitMQ As A Notice Board
 
@@ -82,6 +90,7 @@ Important teaching goal:
 - The Order Service does not know about the Inventory Service.
 - The Inventory Service does not know about the Payment Service.
 - The Payment Service does not know about the Notification Service.
+- None of those services know Analytics Service exists.
 - They communicate by publishing and consuming events.
 
 The only direct HTTP call between services is:
@@ -99,6 +108,7 @@ Using the notice-board analogy:
 - Inventory Service reads that note and posts a new note.
 - Payment Service reads the inventory note and posts a payment note.
 - Notification Service reads final outcome notes and prints messages.
+- Analytics Service observes copies of those same notes and logs metrics.
 
 ## Architecture
 
@@ -118,24 +128,26 @@ Order Service
 RabbitMQ exchange: ecommerce_events
   |
   | routes order.created
-  v
-Inventory Service
+  +--> Inventory Service
+  |     |
+  |     | publishes inventory.reserved
+  |     v
+  |   RabbitMQ exchange: ecommerce_events
+  |     |
+  |     | routes inventory.reserved
+  |     +--> Payment Service
+  |     |     |
+  |     |     | publishes payment.completed or payment.failed
+  |     |     v
+  |     |   RabbitMQ exchange: ecommerce_events
+  |     |     |
+  |     |     | routes payment.completed or payment.failed
+  |     |     +--> Notification Service
+  |     |     +--> Analytics Service observes payment.completed or payment.failed
+  |     |
+  |     +--> Analytics Service observes inventory.reserved
   |
-  | publishes inventory.reserved
-  v
-RabbitMQ exchange: ecommerce_events
-  |
-  | routes inventory.reserved
-  v
-Payment Service
-  |
-  | publishes payment.completed or payment.failed
-  v
-RabbitMQ exchange: ecommerce_events
-  |
-  | routes payment.completed or payment.failed
-  v
-Notification Service
+  +--> Analytics Service observes order.created
 
 Out-of-stock path:
 
@@ -146,8 +158,12 @@ Inventory Service
 RabbitMQ exchange: ecommerce_events
   |
   | routes inventory.failed
-  v
-Notification Service
+  +--> Notification Service
+  |
+  +--> Analytics Service observes inventory.failed
+
+Analytics Service uses its own queue:
+analytics_service_events_queue
 ```
 
 ## Vocabulary Map
@@ -157,7 +173,7 @@ Notification Service
 | Notice board | RabbitMQ | The message broker running in Docker |
 | Notice board area | Exchange | `ecommerce_events` |
 | Label on a note | Routing key | `order.created`, `inventory.reserved`, and similar labels |
-| Service inbox | Queue | `inventory_service_order_created_queue`, `payment_service_inventory_reserved_queue`, `notification_service_events_queue` |
+| Service inbox | Queue | `inventory_service_order_created_queue`, `payment_service_inventory_reserved_queue`, `notification_service_events_queue`, `analytics_service_events_queue` |
 | Subscription rule | Binding | A rule that copies matching note labels into a service inbox |
 | Service that posts a note | Producer | Order, Inventory, and Payment publish events |
 | Service that reads notes | Consumer | Inventory, Payment, and Notification consume events |
@@ -182,6 +198,7 @@ In this demo:
 - Inventory Service checks stock.
 - Payment Service simulates payment.
 - Notification Service prints messages for the customer.
+- Analytics Service observes events and logs simple metrics.
 
 An analogy: instead of one person doing every classroom job, different students have different responsibilities. One student records orders, another checks supplies, another handles payment, and another announces the result.
 
@@ -247,9 +264,12 @@ This demo uses stable queue names so they are easy to inspect in the RabbitMQ UI
 inventory_service_order_created_queue
 payment_service_inventory_reserved_queue
 notification_service_events_queue
+analytics_service_events_queue
 ```
 
 The notification queue is a useful teaching example. It is one service inbox for one service, but it is subscribed to three routing keys.
+
+The analytics queue is the modularity example. It is one service inbox for Analytics Service, and it subscribes to every existing checkout event.
 
 ## Routing Key
 
@@ -279,9 +299,16 @@ For example:
 notification_service_events_queue subscribes to payment.completed
 notification_service_events_queue subscribes to payment.failed
 notification_service_events_queue subscribes to inventory.failed
+analytics_service_events_queue subscribes to order.created
+analytics_service_events_queue subscribes to inventory.reserved
+analytics_service_events_queue subscribes to inventory.failed
+analytics_service_events_queue subscribes to payment.completed
+analytics_service_events_queue subscribes to payment.failed
 ```
 
 That is why Notification Service can receive three different kinds of events using one service inbox.
+
+That is also why Analytics Service can be added without changing the services that publish those events.
 
 ## Producer
 
@@ -302,6 +329,7 @@ Examples:
 - Inventory Service consumes `order.created`.
 - Payment Service consumes `inventory.reserved`.
 - Notification Service consumes `payment.completed`, `payment.failed`, and `inventory.failed`.
+- Analytics Service consumes `order.created`, `inventory.reserved`, `inventory.failed`, `payment.completed`, and `payment.failed`.
 
 ## Event Envelope
 
@@ -338,17 +366,20 @@ The metadata fields teach patterns used in real systems:
 2. API Gateway asks Order Service to create an order.
 3. Order Service creates the order and posts an `order.created` note.
 4. Inventory Service reads the `order.created` note from its service inbox.
-5. Inventory Service checks stock.
-6. If stock exists, Inventory Service posts an `inventory.reserved` note.
-7. If stock does not exist, Inventory Service posts an `inventory.failed` note.
-8. Payment Service reads the `inventory.reserved` note from its service inbox.
-9. Payment Service simulates payment.
-10. If payment succeeds, Payment Service posts a `payment.completed` note.
-11. If payment fails, Payment Service posts a `payment.failed` note.
-12. Notification Service reads final outcome notes from its service inbox.
-13. Notification Service prints a human-readable message.
+5. Analytics Service also reads its own copy of the `order.created` note from its service inbox.
+6. Inventory Service checks stock.
+7. If stock exists, Inventory Service posts an `inventory.reserved` note.
+8. If stock does not exist, Inventory Service posts an `inventory.failed` note.
+9. Analytics Service observes the inventory result note from its own service inbox.
+10. Payment Service reads the `inventory.reserved` note from its service inbox.
+11. Payment Service simulates payment.
+12. If payment succeeds, Payment Service posts a `payment.completed` note.
+13. If payment fails, Payment Service posts a `payment.failed` note.
+14. Notification Service reads final outcome notes from its service inbox.
+15. Analytics Service observes the payment result note from its own service inbox.
+16. Notification Service prints a human-readable message.
 
-The key lesson: each service posts notes and reads notes. Services are not directly telling each other what to do.
+The key lesson: each service posts notes and reads notes. Services are not directly telling each other what to do. Analytics is a side observer, so checkout does not depend on it.
 
 ## Technical RabbitMQ Version Of The Event Flow
 
@@ -357,15 +388,22 @@ The key lesson: each service posts notes and reads notes. Services are not direc
 3. Order Service creates an order.
 4. Order Service publishes `order.created` to the `ecommerce_events` topic exchange.
 5. RabbitMQ routes the message to `inventory_service_order_created_queue`.
-6. Inventory Service consumes `order.created`.
-7. If stock is available, Inventory Service publishes `inventory.reserved`.
-8. If stock is not available, Inventory Service publishes `inventory.failed`.
-9. RabbitMQ routes `inventory.reserved` to `payment_service_inventory_reserved_queue`.
-10. Payment Service consumes `inventory.reserved`.
-11. If payment succeeds, Payment Service publishes `payment.completed`.
-12. If payment fails, Payment Service publishes `payment.failed`.
-13. RabbitMQ routes `payment.completed`, `payment.failed`, and `inventory.failed` to `notification_service_events_queue`.
-14. Notification Service consumes the final event and logs a notification.
+6. RabbitMQ also routes a copy of `order.created` to `analytics_service_events_queue`.
+7. Inventory Service consumes `order.created`.
+8. Analytics Service consumes its own copy of `order.created` and logs `checkout_started`.
+9. If stock is available, Inventory Service publishes `inventory.reserved`.
+10. If stock is not available, Inventory Service publishes `inventory.failed`.
+11. RabbitMQ routes `inventory.reserved` to `payment_service_inventory_reserved_queue`.
+12. RabbitMQ also routes inventory result events to `analytics_service_events_queue`.
+13. Payment Service consumes `inventory.reserved`.
+14. If payment succeeds, Payment Service publishes `payment.completed`.
+15. If payment fails, Payment Service publishes `payment.failed`.
+16. RabbitMQ routes `payment.completed`, `payment.failed`, and `inventory.failed` to `notification_service_events_queue`.
+17. RabbitMQ also routes payment result events to `analytics_service_events_queue`.
+18. Notification Service consumes the final event and logs a notification.
+19. Analytics Service consumes its own event copies and logs metrics.
+
+Advanced note: different queues bound to the same routing key each receive their own copy of the event. This is why Inventory and Analytics can both receive `order.created`.
 
 ## Why API Gateway Uses HTTP
 
@@ -427,6 +465,18 @@ This works because one service inbox can subscribe to multiple routing keys.
 
 In the analogy, Notification Service has one service inbox, but three note labels are copied into it.
 
+## Why Analytics Can Be Added From The Side
+
+Analytics Service does not create orders, reserve inventory, charge payments, or notify customers.
+
+It only watches event notes that already exist and logs simple metrics.
+
+In the analogy, Analytics Service gets its own service inbox and subscribes to note labels that other services were already posting.
+
+Order Service, Inventory Service, Payment Service, and Notification Service do not need to know Analytics Service exists.
+
+This is the modularity lesson: a new service can subscribe to existing events without changing the publishers.
+
 ## Why Not Just Use Direct HTTP Calls?
 
 Direct HTTP calls are useful in many situations.
@@ -461,6 +511,8 @@ With the notice-board style:
 - Any interested service can subscribe.
 - New services can be added later without changing Order Service.
 - If a subscribed service is temporarily stopped, its existing service inbox can keep notes waiting.
+
+Analytics Service demonstrates this. It subscribes to existing events without requiring changes in Order Service, Inventory Service, Payment Service, or Notification Service.
 
 This is better than direct HTTP calls in situations where:
 
@@ -573,6 +625,35 @@ Username: guest
 Password: guest
 ```
 
+## Using The Web UI
+
+Open:
+
+```text
+http://localhost:3000
+```
+
+The web UI is only a friendly way to create the same `POST /checkout` request shown in the curl examples.
+
+The browser sends HTTP to the API Gateway. The API Gateway forwards the request to Order Service. After the order is created, RabbitMQ events drive the rest of the workflow.
+
+The Event Flow Timeline in the UI is a classroom visualization based on the selected scenario and API response. It is not live RabbitMQ tracing. Use Docker logs and RabbitMQ Management UI to observe the real backend behavior.
+
+For prepared scenarios, the UI uses the real `correlationId` returned by API Gateway so students can search for the same ID in Docker Compose logs. For custom/manual input, the UI does not guess the async outcome; it tells students to check Docker logs and RabbitMQ UI.
+
+Scenario buttons:
+
+- Successful checkout: `student-1`, `pencil`, quantity `2`.
+- Out of stock: `student-1`, `laptop`, quantity `1`.
+- Payment failure: `fail-payment`, `pencil`, quantity `1`.
+- Invalid request: `student-1`, `pencil`, quantity `0`.
+
+After clicking a scenario, watch:
+
+- The API response panel in the browser.
+- Docker Compose logs in the terminal.
+- RabbitMQ Management UI for exchanges, queues, bindings, and message counts.
+
 ## Health Checks
 
 ```bash
@@ -581,6 +662,7 @@ curl http://localhost:3001/health
 curl http://localhost:3002/health
 curl http://localhost:3003/health
 curl http://localhost:3004/health
+curl http://localhost:3005/health
 ```
 
 Example response:
@@ -614,6 +696,7 @@ Look for these parts:
 - Queue names: they show which service owns each service inbox.
 - Bindings: they show which note labels each service inbox subscribes to.
 - Message counts: they show notes waiting to be read.
+- Analytics queue: `analytics_service_events_queue` shows the new side observer service inbox.
 
 During the catch-up demo, stop `notification-service`, send a checkout, and watch its queue hold a message until the service starts again.
 
@@ -661,6 +744,7 @@ Expected response:
 ```json
 {
   "message": "Checkout request accepted",
+  "correlationId": "corr_123",
   "order": {
     "orderId": "ord_123",
     "userId": "student-1",
@@ -690,6 +774,13 @@ Expected logs:
 
 [Notification Service] [corr_123] Received event: payment.completed
 [Notification Service] [corr_123] Notification: Order ord_123 confirmed
+
+[Analytics Service] [corr_123] Received event: order.created
+[Analytics Service] [corr_123] Metric: checkout_started
+[Analytics Service] [corr_123] Received event: inventory.reserved
+[Analytics Service] [corr_123] Metric: inventory_reserved
+[Analytics Service] [corr_123] Received event: payment.completed
+[Analytics Service] [corr_123] Metric: checkout_completed
 ```
 
 Notice-board version:
@@ -718,6 +809,10 @@ Expected logs:
 [Inventory Service] [corr_123] Published event: inventory.failed
 [Notification Service] [corr_123] Received event: inventory.failed
 [Notification Service] [corr_123] Notification: Product is out of stock.
+[Analytics Service] [corr_123] Received event: order.created
+[Analytics Service] [corr_123] Metric: checkout_started
+[Analytics Service] [corr_123] Received event: inventory.failed
+[Analytics Service] [corr_123] Metric: checkout_failed_out_of_stock
 ```
 
 Notice-board version:
@@ -746,6 +841,12 @@ Expected logs:
 [Payment Service] [corr_123] Published event: payment.failed
 [Notification Service] [corr_123] Received event: payment.failed
 [Notification Service] [corr_123] Notification: Payment failed. Please try again.
+[Analytics Service] [corr_123] Received event: order.created
+[Analytics Service] [corr_123] Metric: checkout_started
+[Analytics Service] [corr_123] Received event: inventory.reserved
+[Analytics Service] [corr_123] Metric: inventory_reserved
+[Analytics Service] [corr_123] Received event: payment.failed
+[Analytics Service] [corr_123] Metric: checkout_failed_payment
 ```
 
 Notice-board version:
@@ -768,6 +869,7 @@ curl -X POST http://localhost:3000/checkout \
 Expected behavior:
 
 - API Gateway returns `400`.
+- The response includes a `correlationId` that can be searched in the logs.
 - No order is created.
 - No `order.created` event is published.
 
@@ -776,6 +878,87 @@ Teaching point:
 ```text
 Invalid request -> rejected at the system boundary -> no event.
 Valid request -> accepted command -> event can be published.
+```
+
+## Modularity Demo: Analytics Service
+
+Analytics Service shows that event-driven systems can grow without changing the existing publishers.
+
+It was added from the side. The checkout flow already worked before Analytics Service existed.
+
+What it does:
+
+- Owns the queue `analytics_service_events_queue`.
+- Consumes `order.created`, `inventory.reserved`, `inventory.failed`, `payment.completed`, and `payment.failed`.
+- Publishes no events.
+- Logs simple metrics for classroom discussion.
+
+Metrics it logs:
+
+```text
+order.created -> checkout_started
+inventory.reserved -> inventory_reserved
+inventory.failed -> checkout_failed_out_of_stock
+payment.completed -> checkout_completed
+payment.failed -> checkout_failed_payment
+```
+
+Why existing services do not change:
+
+- Order Service already publishes `order.created`.
+- Inventory Service already publishes `inventory.reserved` and `inventory.failed`.
+- Payment Service already publishes `payment.completed` and `payment.failed`.
+- Analytics Service only subscribes to those existing note labels.
+
+In the notice-board analogy, Analytics Service gets its own service inbox and reads copies of notes that were already being posted.
+
+Advanced note:
+
+Different queues bound to the same routing key each receive their own copy of the event. This is why Inventory and Analytics can both receive `order.created`.
+
+To show that checkout does not depend on Analytics Service:
+
+```bash
+docker compose stop analytics-service
+```
+
+Send a checkout request. Order, Inventory, Payment, and Notification still work.
+
+Restart Analytics Service:
+
+```bash
+docker compose start analytics-service
+```
+
+Expected Analytics logs for a successful checkout:
+
+```text
+[Analytics Service] [corr_123] Received event: order.created
+[Analytics Service] [corr_123] Metric: checkout_started
+[Analytics Service] [corr_123] Received event: inventory.reserved
+[Analytics Service] [corr_123] Metric: inventory_reserved
+[Analytics Service] [corr_123] Received event: payment.completed
+[Analytics Service] [corr_123] Metric: checkout_completed
+```
+
+Expected Analytics logs for an out-of-stock checkout:
+
+```text
+[Analytics Service] [corr_123] Received event: order.created
+[Analytics Service] [corr_123] Metric: checkout_started
+[Analytics Service] [corr_123] Received event: inventory.failed
+[Analytics Service] [corr_123] Metric: checkout_failed_out_of_stock
+```
+
+Expected Analytics logs for a payment failure:
+
+```text
+[Analytics Service] [corr_123] Received event: order.created
+[Analytics Service] [corr_123] Metric: checkout_started
+[Analytics Service] [corr_123] Received event: inventory.reserved
+[Analytics Service] [corr_123] Metric: inventory_reserved
+[Analytics Service] [corr_123] Received event: payment.failed
+[Analytics Service] [corr_123] Metric: checkout_failed_payment
 ```
 
 ## Classroom Demo Plan
@@ -789,15 +972,20 @@ Valid request -> accepted command -> event can be published.
 4. Explain that the exchange is the notice board area where notes are posted.
 5. Show the durable queues.
 6. Explain that each queue is a service inbox.
-7. Send a successful checkout request.
-8. Watch logs in each service.
-9. Send an out-of-stock checkout request.
-10. Watch how `inventory.failed` is handled.
-11. Send a payment failure request.
-12. Stop `notification-service`.
-13. Send another successful checkout.
-14. Restart `notification-service`.
-15. Explain how durable service inboxes allow services to catch up after the service inbox has already been created.
+7. Open the web UI at `http://localhost:3000`.
+8. Send a successful checkout request with the UI.
+9. Show the equivalent curl command so students see the raw HTTP request.
+10. Watch logs in each service.
+11. Send an out-of-stock checkout request.
+12. Watch how `inventory.failed` is handled.
+13. Send a payment failure request.
+14. Show Analytics Service logs and explain that it was added without changing existing services.
+15. Stop `analytics-service` and send another checkout to show the main flow still works.
+16. Restart `analytics-service`.
+17. Stop `notification-service`.
+18. Send another successful checkout.
+19. Restart `notification-service`.
+20. Explain how durable service inboxes allow services to catch up after the service inbox has already been created.
 
 To stop only the notification service:
 
@@ -811,6 +999,18 @@ To restart it:
 docker compose start notification-service
 ```
 
+To stop only the analytics service:
+
+```bash
+docker compose stop analytics-service
+```
+
+To restart it:
+
+```bash
+docker compose start analytics-service
+```
+
 ## Suggested Teaching Script
 
 1. "The client only knows about the API Gateway."
@@ -820,9 +1020,10 @@ docker compose start notification-service
 5. "Inventory reacts to `order.created`."
 6. "Payment reacts to `inventory.reserved`."
 7. "Notification reacts to several outcomes."
-8. "Each service owns its own behavior."
-9. "The correlation ID lets us follow one checkout across service logs."
-10. "This is eventually consistent because the API response returns before the whole workflow finishes."
+8. "Analytics reacts from the side using its own service inbox."
+9. "Each service owns its own behavior."
+10. "The correlation ID lets us follow one checkout across service logs."
+11. "This is eventually consistent because the API response returns before the whole workflow finishes."
 
 ## What Students Should Notice
 
@@ -833,6 +1034,8 @@ docker compose start notification-service
 - A publisher posts a note and continues.
 - Consumers read matching notes from their own service inboxes.
 - Notification Service can receive three event types without any producer knowing about Notification Service.
+- Analytics Service can receive all checkout event types without any producer knowing about Analytics Service.
+- Inventory and Analytics can both receive `order.created` because they use different queues bound to the same routing key.
 - Adding a new service that listens to `order.created` would not require changing Order Service.
 
 ## Classroom Questions
@@ -845,6 +1048,8 @@ Ask these while watching the logs:
 - Which service read it?
 - Did the publisher know who would read the note?
 - Could another service subscribe to `order.created` without changing Order Service?
+- Why can Inventory and Analytics both receive `order.created`?
+- Does checkout still work if Analytics Service is stopped?
 - What happens if Notification Service is stopped after its service inbox exists?
 - Why does the API response return before payment and notification finish?
 - What compensating event might we add after `payment.failed` in a real system?
@@ -870,6 +1075,8 @@ This is part of eventual consistency.
 ### What happens if a service is down?
 
 If the service inbox already exists, RabbitMQ can store messages until the service comes back.
+
+If Analytics Service is down, checkout still works because Analytics is only a side observer.
 
 ### What happens if RabbitMQ is down?
 
@@ -930,3 +1137,47 @@ This demo is intentionally simple. A real system would add:
 - Inventory release events when payment fails.
 - Automated tests.
 - Graceful shutdown handling.
+
+## Visual Event Timeline
+
+This project now includes an educational Visual Event Timeline in the web UI at `http://localhost:3000`.
+
+Why the timeline exists:
+- It provides a classroom visualization of the event flow based on the selected scenario and API response.
+- It is designed to be easier to read than mixed container logs, making it ideal for classroom instruction.
+- It maps the HTTP request and subsequent event-driven steps clearly to the notice-board analogy.
+
+How to use it during class:
+- Toggle between "Beginner View" and "Technical View" to explain concepts gradually.
+- Watch as the timeline visually reveals each step (API Gateway -> Order -> Inventory -> Payment -> Notification).
+- Notice that Analytics Service appears as a parallel observer. It does not block or control checkout.
+- For prepared scenarios, note that the UI uses the real `correlationId` returned by API Gateway. Search that ID in Docker Compose logs to find the real backend output.
+- For custom/manual input, the UI does not guess the async outcome. Check Docker logs and RabbitMQ Management UI for what actually happened.
+
+Important Note:
+The timeline is a teaching visualization. It is not live RabbitMQ tracing. The real service logs in Docker Compose and RabbitMQ Management UI are still the source for observing real backend behavior.
+
+## Service Explorer
+
+The web UI at `http://localhost:3000` includes expandable service explanations.
+
+Students can use the Service Explorer to understand:
+- What each service owns and its main responsibilities.
+- Which events each service publishes and consumes.
+- What each service does NOT know about the rest of the system.
+- How Analytics Service observes existing events without becoming part of the main checkout chain.
+- How the codebase maps to these responsibilities.
+
+This section supports the classroom explanation either before running scenarios (to establish concepts) or after (to review).
+
+## Cleaner Application Logs
+
+If you find the default Docker Compose logs too noisy because of RabbitMQ's internal logs, you can filter them to show only application services.
+
+Run this command:
+
+```bash
+docker compose logs -f api-gateway order-service inventory-service payment-service notification-service analytics-service
+```
+
+This hides RabbitMQ internal logs and makes the event flow much easier to read in the terminal.

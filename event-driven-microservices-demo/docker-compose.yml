@@ -60,3 +60,14 @@ services:
       - RABBITMQ_URL=amqp://rabbitmq:5672
     depends_on:
       - rabbitmq
+
+  analytics-service:
+    build: ./analytics-service
+    container_name: analytics-service
+    ports:
+      - "3005:3005"
+    environment:
+      - PORT=3005
+      - RABBITMQ_URL=amqp://rabbitmq:5672
+    depends_on:
+      - rabbitmq
