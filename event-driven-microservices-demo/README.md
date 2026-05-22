@@ -1165,8 +1165,8 @@ Students can use the Service Explorer to understand:
 - What each service owns and its main responsibilities.
 - Which events each service publishes and consumes.
 - What each service does NOT know about the rest of the system.
-- How Analytics Service observes existing events without becoming part of the main checkout chain.
 - How the codebase maps to these responsibilities.
+- How the Analytics Service acts as a global observer without disrupting the flow.
 
 This section supports the classroom explanation either before running scenarios (to establish concepts) or after (to review).
 
