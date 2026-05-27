@@ -5,18 +5,15 @@ const app = express();
 const PORT = process.env.PORT || 3005;
 
 const QUEUE_NAME = "analytics_service_events_queue";
-const ROUTING_KEYS = [
-  "order.created",
-  "inventory.reserved",
-  "inventory.failed",
-  "payment.completed",
-  "payment.failed",
-];
+const ROUTING_KEYS = ["#"];
 
 const METRIC_BY_EVENT_TYPE = {
   "order.created": "checkout_started",
+  "order.cancelled": "order_cancelled",
   "inventory.reserved": "inventory_reserved",
   "inventory.failed": "checkout_failed_out_of_stock",
+  "inventory.release_requested": "compensation_requested",
+  "inventory.released": "inventory_released",
   "payment.completed": "checkout_completed",
   "payment.failed": "checkout_failed_payment",
 };
@@ -46,7 +43,7 @@ async function start() {
   app.listen(PORT, () => {
     console.log(`[Analytics Service] Listening on port ${PORT}`);
     console.log("[Analytics Service] Teaching point: I can be added without changing Order, Inventory, Payment, or Notification services.");
-    console.log("[Analytics Service] Waiting for order.created, inventory.*, and payment.* events");
+    console.log("[Analytics Service] Waiting for order, inventory, and payment events");
   });
 }
 

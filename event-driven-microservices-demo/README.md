@@ -28,7 +28,15 @@ Client -> API Gateway -> Order Service
 After the order is created, the rest of the system uses events:
 
 ```text
+Happy path:
 order.created -> inventory.reserved -> payment.completed -> notification
+
+Out of stock:
+order.created -> inventory.failed -> notification + order.cancelled
+
+Payment failure (with compensation):
+order.created -> inventory.reserved -> payment.failed -> notification
+  -> order.cancelled -> inventory.release_requested -> inventory.released
 ```
 
 The main lesson: services do not directly call each other after order creation. They publish and consume events through RabbitMQ.
@@ -87,11 +95,12 @@ The API Gateway accepts the HTTP request, the Order Service creates an order, an
 
 Important teaching goal:
 
-- The Order Service does not know about the Inventory Service.
-- The Inventory Service does not know about the Payment Service.
-- The Payment Service does not know about the Notification Service.
-- None of those services know Analytics Service exists.
-- They communicate by publishing and consuming events.
+- Services do not call each other's HTTP APIs after the gateway forwards to Order Service.
+- Order Service does not ask Inventory Service directly to reserve stock; it publishes `order.created`.
+- Inventory Service does not call Payment Service directly; it publishes inventory result events.
+- Payment Service does not restore stock directly; it publishes `inventory.release_requested` and Inventory performs the release.
+- None of the checkout services need to know Analytics Service exists.
+- They communicate by publishing and consuming events on RabbitMQ.
 
 The only direct HTTP call between services is:
 
@@ -104,10 +113,10 @@ Everything after order creation is event-driven.
 Using the notice-board analogy:
 
 - API Gateway asks Order Service to create an order.
-- Order Service posts an `order.created` note.
-- Inventory Service reads that note and posts a new note.
-- Payment Service reads the inventory note and posts a payment note.
-- Notification Service reads final outcome notes and prints messages.
+- Order Service posts an `order.created` note (and later may post `order.cancelled` if checkout fails).
+- Inventory Service reads that note and posts inventory result notes (including `inventory.released` after compensation).
+- Payment Service reads the inventory note and posts payment notes (and may request stock release after failure).
+- Notification Service reads final customer-facing outcome notes and prints messages.
 - Analytics Service observes copies of those same notes and logs metrics.
 
 ## Architecture
@@ -147,7 +156,7 @@ RabbitMQ exchange: ecommerce_events
   |     |
   |     +--> Analytics Service observes inventory.reserved
   |
-  +--> Analytics Service observes order.created
+  +--> Analytics Service observes order.created (via `#` binding)
 
 Out-of-stock path:
 
@@ -159,11 +168,28 @@ RabbitMQ exchange: ecommerce_events
   |
   | routes inventory.failed
   +--> Notification Service
+  +--> Order Service (cancels order, publishes order.cancelled)
   |
-  +--> Analytics Service observes inventory.failed
+  +--> Analytics Service observes inventory.failed and order.cancelled
+
+Payment-failure path (after inventory.reserved):
+
+Payment Service
+  |
+  | publishes payment.failed
+  | publishes inventory.release_requested
+  v
+RabbitMQ exchange: ecommerce_events
+  |
+  +--> Notification Service (payment.failed)
+  +--> Order Service (payment.failed -> order.cancelled)
+  +--> Inventory Service (inventory.release_requested -> inventory.released)
+  |
+  +--> Analytics Service observes compensation events
 
 Analytics Service uses its own queue:
 analytics_service_events_queue
+(bound with routing key `#` to receive every event on the exchange)
 ```
 
 ## Vocabulary Map
@@ -173,10 +199,10 @@ analytics_service_events_queue
 | Notice board | RabbitMQ | The message broker running in Docker |
 | Notice board area | Exchange | `ecommerce_events` |
 | Label on a note | Routing key | `order.created`, `inventory.reserved`, and similar labels |
-| Service inbox | Queue | `inventory_service_order_created_queue`, `payment_service_inventory_reserved_queue`, `notification_service_events_queue`, `analytics_service_events_queue` |
+| Service inbox | Queue | `inventory_service_order_created_queue`, `inventory_service_release_requested_queue`, `payment_service_inventory_reserved_queue`, `order_service_checkout_failed_queue`, `notification_service_events_queue`, `analytics_service_events_queue` |
 | Subscription rule | Binding | A rule that copies matching note labels into a service inbox |
-| Service that posts a note | Producer | Order, Inventory, and Payment publish events |
-| Service that reads notes | Consumer | Inventory, Payment, and Notification consume events |
+| Service that posts a note | Producer | Order, Inventory, and Payment publish events (including compensation) |
+| Service that reads notes | Consumer | Order, Inventory, Payment, and Notification consume events |
 | Note content | Message body | The JSON event envelope |
 
 ## A Short Warning About The Analogy
@@ -194,9 +220,9 @@ Microservices are small services that each own one part of a system.
 In this demo:
 
 - API Gateway receives client requests.
-- Order Service creates orders.
-- Inventory Service checks stock.
-- Payment Service simulates payment.
+- Order Service creates and cancels orders.
+- Inventory Service checks stock and compensates after payment failure.
+- Payment Service simulates payment and requests inventory release when payment fails.
 - Notification Service prints messages for the customer.
 - Analytics Service observes events and logs simple metrics.
 
@@ -214,6 +240,10 @@ For example:
 order.created
 inventory.reserved
 payment.completed
+payment.failed
+inventory.release_requested
+inventory.released
+order.cancelled
 ```
 
 A service publishes an event, and other services can react to it.
@@ -262,14 +292,18 @@ This demo uses stable queue names so they are easy to inspect in the RabbitMQ UI
 
 ```text
 inventory_service_order_created_queue
+inventory_service_release_requested_queue
 payment_service_inventory_reserved_queue
+order_service_checkout_failed_queue
 notification_service_events_queue
 analytics_service_events_queue
 ```
 
 The notification queue is a useful teaching example. It is one service inbox for one service, but it is subscribed to three routing keys.
 
-The analytics queue is the modularity example. It is one service inbox for Analytics Service, and it subscribes to every existing checkout event.
+The order checkout-failed queue shows one inbox bound to multiple failure routing keys (`inventory.failed` and `payment.failed`).
+
+The analytics queue is the modularity example. It is one service inbox bound to `#`, so it receives every routing key published to the exchange without listing each event manually.
 
 ## Routing Key
 
@@ -279,8 +313,11 @@ This demo uses these routing keys:
 
 ```text
 order.created
+order.cancelled
 inventory.reserved
 inventory.failed
+inventory.release_requested
+inventory.released
 payment.completed
 payment.failed
 ```
@@ -299,11 +336,10 @@ For example:
 notification_service_events_queue subscribes to payment.completed
 notification_service_events_queue subscribes to payment.failed
 notification_service_events_queue subscribes to inventory.failed
-analytics_service_events_queue subscribes to order.created
-analytics_service_events_queue subscribes to inventory.reserved
-analytics_service_events_queue subscribes to inventory.failed
-analytics_service_events_queue subscribes to payment.completed
-analytics_service_events_queue subscribes to payment.failed
+order_service_checkout_failed_queue subscribes to inventory.failed
+order_service_checkout_failed_queue subscribes to payment.failed
+inventory_service_release_requested_queue subscribes to inventory.release_requested
+analytics_service_events_queue subscribes to # (all events wildcard)
 ```
 
 That is why Notification Service can receive three different kinds of events using one service inbox.
@@ -316,9 +352,9 @@ A producer is a service that posts a note to the notice board.
 
 Examples:
 
-- Order Service produces `order.created`.
-- Inventory Service produces `inventory.reserved` or `inventory.failed`.
-- Payment Service produces `payment.completed` or `payment.failed`.
+- Order Service produces `order.created` and `order.cancelled`.
+- Inventory Service produces `inventory.reserved`, `inventory.failed`, or `inventory.released`.
+- Payment Service produces `payment.completed`, `payment.failed`, or `inventory.release_requested`.
 
 ## Consumer
 
@@ -326,10 +362,11 @@ A consumer is a service that reads notes from its service inbox.
 
 Examples:
 
-- Inventory Service consumes `order.created`.
+- Order Service consumes `inventory.failed` and `payment.failed`.
+- Inventory Service consumes `order.created` and `inventory.release_requested`.
 - Payment Service consumes `inventory.reserved`.
 - Notification Service consumes `payment.completed`, `payment.failed`, and `inventory.failed`.
-- Analytics Service consumes `order.created`, `inventory.reserved`, `inventory.failed`, `payment.completed`, and `payment.failed`.
+- Analytics Service consumes all events using the `#` wildcard.
 
 ## Event Envelope
 
@@ -374,10 +411,12 @@ The metadata fields teach patterns used in real systems:
 10. Payment Service reads the `inventory.reserved` note from its service inbox.
 11. Payment Service simulates payment.
 12. If payment succeeds, Payment Service posts a `payment.completed` note.
-13. If payment fails, Payment Service posts a `payment.failed` note.
-14. Notification Service reads final outcome notes from its service inbox.
-15. Analytics Service observes the payment result note from its own service inbox.
-16. Notification Service prints a human-readable message.
+13. If payment fails, Payment Service posts a `payment.failed` note, then an `inventory.release_requested` note.
+14. Notification Service reads final customer-facing outcome notes from its service inbox.
+15. Order Service may read `inventory.failed` or `payment.failed` and post `order.cancelled`.
+16. Inventory Service may read `inventory.release_requested` and post `inventory.released` (stock restored).
+17. Analytics Service observes copies of these notes from its own service inbox.
+18. Notification Service prints a human-readable message (not a second message for compensation).
 
 The key lesson: each service posts notes and reads notes. Services are not directly telling each other what to do. Analytics is a side observer, so checkout does not depend on it.
 
@@ -397,11 +436,15 @@ The key lesson: each service posts notes and reads notes. Services are not direc
 12. RabbitMQ also routes inventory result events to `analytics_service_events_queue`.
 13. Payment Service consumes `inventory.reserved`.
 14. If payment succeeds, Payment Service publishes `payment.completed`.
-15. If payment fails, Payment Service publishes `payment.failed`.
+15. If payment fails, Payment Service publishes `payment.failed`, then `inventory.release_requested`.
 16. RabbitMQ routes `payment.completed`, `payment.failed`, and `inventory.failed` to `notification_service_events_queue`.
-17. RabbitMQ also routes payment result events to `analytics_service_events_queue`.
-18. Notification Service consumes the final event and logs a notification.
-19. Analytics Service consumes its own event copies and logs metrics.
+17. RabbitMQ routes `inventory.failed` and `payment.failed` to `order_service_checkout_failed_queue`.
+18. RabbitMQ routes `inventory.release_requested` to `inventory_service_release_requested_queue`.
+19. Order Service consumes failure events and publishes `order.cancelled`.
+20. Inventory Service consumes `inventory.release_requested` and publishes `inventory.released`.
+21. RabbitMQ routes all published events to `analytics_service_events_queue` (binding `#`).
+22. Notification Service consumes the final customer-facing event and logs a notification.
+23. Analytics Service consumes event copies and logs metrics.
 
 Advanced note: different queues bound to the same routing key each receive their own copy of the event. This is why Inventory and Analytics can both receive `order.created`.
 
@@ -415,9 +458,9 @@ After the order is created, the rest of the workflow can continue asynchronously
 
 In the analogy, the customer talks directly to the front desk. After that, the classroom workers use the notice board.
 
-## Why Order Service Publishes An Event
+## Why Order Service Publishes Events
 
-Order Service only owns order creation.
+Order Service owns order lifecycle in this demo.
 
 It publishes `order.created` to say:
 
@@ -428,6 +471,21 @@ An order was created.
 In the analogy, Order Service posts a note to the notice board. It does not walk around the room telling every other service what to do.
 
 It does not directly call Inventory Service. This keeps Order Service independent.
+
+## Why Order Service Cancels Orders On Failure
+
+Order Service owns order state.
+
+When checkout cannot finish, it listens for:
+
+- `inventory.failed`
+- `payment.failed`
+
+It updates the in-memory order to `cancelled` and publishes `order.cancelled`.
+
+It does not wait for `inventory.released` before cancelling on payment failure. That is intentional: order outcome and stock compensation are separate async steps (eventual consistency).
+
+The HTTP response from `POST /checkout` may still show `"status": "created"` because the gateway returns before these async steps finish. Search logs for `order.cancelled`.
 
 ## Why Inventory Does Not Directly Call Payment
 
@@ -451,6 +509,12 @@ inventory.reserved
 
 In the analogy, Payment Service only reads notes labeled `inventory.reserved`.
 
+## Why Payment Requests inventory.release_requested
+
+When payment fails after stock was reserved, Payment Service must not edit inventory directly.
+
+It publishes `inventory.release_requested`. Inventory Service owns stock, consumes that note, adds quantity back, and publishes `inventory.released`.
+
 ## Why Notification Listens To Multiple Events
 
 Notification Service needs to tell the customer about different outcomes.
@@ -471,11 +535,11 @@ Analytics Service does not create orders, reserve inventory, charge payments, or
 
 It only watches event notes that already exist and logs simple metrics.
 
-In the analogy, Analytics Service gets its own service inbox and subscribes to note labels that other services were already posting.
+In the analogy, Analytics Service gets its own service inbox bound to all note labels (`#`).
 
 Order Service, Inventory Service, Payment Service, and Notification Service do not need to know Analytics Service exists.
 
-This is the modularity lesson: a new service can subscribe to existing events without changing the publishers.
+This is the modularity lesson: a side observer can subscribe broadly without changing the publishers.
 
 ## Why Not Just Use Direct HTTP Calls?
 
@@ -579,24 +643,26 @@ This is intentional for v1. It keeps the demo simple.
 
 ## Payment Failure And Compensating Actions
 
-In this v1 demo, stock is deducted when inventory is reserved.
+Stock is deducted when inventory is reserved.
 
-If payment later fails, the demo intentionally stops after publishing:
+If payment later fails, the demo now runs a small compensating flow:
 
 ```text
 payment.failed
-```
-
-A real production system would usually publish another event such as:
-
-```text
 inventory.release_requested
 inventory.released
 ```
 
-That would release the reserved stock.
+Payment Service publishes `payment.failed` first so Notification Service and Order Service can react. Then Payment Service publishes `inventory.release_requested`. Inventory Service owns stock, so it restores the reserved quantity and publishes `inventory.released`.
 
-This is a useful teaching moment for sagas and compensating actions, but it is skipped in v1 to keep the first lesson focused.
+Order Service also cancels the order when checkout cannot finish:
+
+- `inventory.failed` → `order.cancelled` (out of stock)
+- `payment.failed` → `order.cancelled` (payment failure)
+
+Why doesn't Payment Service add stock back directly? Because each service should own its own data. Payment announces failure and asks for compensation; Inventory performs the release.
+
+`inventory.released` is visible in Docker logs, RabbitMQ UI, and Analytics metrics. Notification Service does not send a second customer message for compensation.
 
 ## Run The Project
 
@@ -639,7 +705,11 @@ The browser sends HTTP to the API Gateway. The API Gateway forwards the request 
 
 The Event Flow Timeline in the UI is a classroom visualization based on the selected scenario and API response. It is not live RabbitMQ tracing. Use Docker logs and RabbitMQ Management UI to observe the real backend behavior.
 
-For prepared scenarios, the UI uses the real `correlationId` returned by API Gateway so students can search for the same ID in Docker Compose logs. For custom/manual input, the UI does not guess the async outcome; it tells students to check Docker logs and RabbitMQ UI.
+For the **out-of-stock** and **payment failure** scenarios, the timeline includes extra steps such as `order.cancelled`, `inventory.release_requested`, and `inventory.released`. The **Analytics Service** panel beside the timeline animates as each scripted event appears (teaching visualization, not live broker tracing).
+
+For prepared scenarios, the UI uses the top-level `correlationId` from the API Gateway JSON response so students can search for the same ID in Docker Compose logs. For custom/manual input, the UI does not guess the async outcome; it tells students to check Docker logs and RabbitMQ UI.
+
+The API response JSON may still show `"status": "created"` immediately even when the order is later cancelled in the logs.
 
 Scenario buttons:
 
@@ -717,6 +787,16 @@ Read the logs by following that same ID across services:
 [Inventory Service] [corr_123] Received event: order.created
 [Payment Service] [corr_123] Received event: inventory.reserved
 [Notification Service] [corr_123] Notification: Order ord_123 confirmed
+```
+
+Payment failure example (same `corr_123`):
+
+```text
+[Payment Service] [corr_123] Published event: payment.failed
+[Payment Service] [corr_123] Published event: inventory.release_requested
+[Order Service] [corr_123] Cancelled order ord_123 because of payment.failed
+[Inventory Service] [corr_123] Published event: inventory.released
+[Inventory Service] [corr_123] Remaining pencil stock: 10
 ```
 
 The `correlationId` is like writing the same classroom activity number on every related note.
@@ -809,10 +889,15 @@ Expected logs:
 [Inventory Service] [corr_123] Published event: inventory.failed
 [Notification Service] [corr_123] Received event: inventory.failed
 [Notification Service] [corr_123] Notification: Product is out of stock.
+[Order Service] [corr_123] Received event: inventory.failed
+[Order Service] [corr_123] Cancelled order ord_123 because of inventory.failed
+[Order Service] [corr_123] Published event: order.cancelled
 [Analytics Service] [corr_123] Received event: order.created
 [Analytics Service] [corr_123] Metric: checkout_started
 [Analytics Service] [corr_123] Received event: inventory.failed
 [Analytics Service] [corr_123] Metric: checkout_failed_out_of_stock
+[Analytics Service] [corr_123] Received event: order.cancelled
+[Analytics Service] [corr_123] Metric: order_cancelled
 ```
 
 Notice-board version:
@@ -821,6 +906,7 @@ Notice-board version:
 Order posts order.created.
 Inventory reads order.created and posts inventory.failed.
 Notification reads inventory.failed and prints the out-of-stock message.
+Order reads inventory.failed and posts order.cancelled.
 ```
 
 ## Test Payment Failure
@@ -839,14 +925,28 @@ Expected logs:
 [Payment Service] [corr_123] Received event: inventory.reserved
 [Payment Service] [corr_123] Payment failed
 [Payment Service] [corr_123] Published event: payment.failed
+[Payment Service] [corr_123] Published event: inventory.release_requested
 [Notification Service] [corr_123] Received event: payment.failed
 [Notification Service] [corr_123] Notification: Payment failed. Please try again.
+[Order Service] [corr_123] Received event: payment.failed
+[Order Service] [corr_123] Cancelled order ord_123 because of payment.failed
+[Order Service] [corr_123] Published event: order.cancelled
+[Inventory Service] [corr_123] Received event: inventory.release_requested
+[Inventory Service] [corr_123] Released reservation for order ord_123
+[Inventory Service] [corr_123] Published event: inventory.released
+[Inventory Service] [corr_123] Remaining pencil stock: 10
 [Analytics Service] [corr_123] Received event: order.created
 [Analytics Service] [corr_123] Metric: checkout_started
 [Analytics Service] [corr_123] Received event: inventory.reserved
 [Analytics Service] [corr_123] Metric: inventory_reserved
 [Analytics Service] [corr_123] Received event: payment.failed
 [Analytics Service] [corr_123] Metric: checkout_failed_payment
+[Analytics Service] [corr_123] Received event: inventory.release_requested
+[Analytics Service] [corr_123] Metric: compensation_requested
+[Analytics Service] [corr_123] Received event: order.cancelled
+[Analytics Service] [corr_123] Metric: order_cancelled
+[Analytics Service] [corr_123] Received event: inventory.released
+[Analytics Service] [corr_123] Metric: inventory_released
 ```
 
 Notice-board version:
@@ -856,6 +956,9 @@ Order posts order.created.
 Inventory reads order.created and posts inventory.reserved.
 Payment reads inventory.reserved and posts payment.failed.
 Notification reads payment.failed and prints the payment failure message.
+Order reads payment.failed and posts order.cancelled.
+Payment posts inventory.release_requested.
+Inventory reads release_requested and posts inventory.released.
 ```
 
 ## Test Invalid Checkout Request
@@ -889,7 +992,7 @@ It was added from the side. The checkout flow already worked before Analytics Se
 What it does:
 
 - Owns the queue `analytics_service_events_queue`.
-- Consumes `order.created`, `inventory.reserved`, `inventory.failed`, `payment.completed`, and `payment.failed`.
+- Consumes checkout and compensation events including `order.cancelled`, `inventory.release_requested`, and `inventory.released`.
 - Publishes no events.
 - Logs simple metrics for classroom discussion.
 
@@ -897,20 +1000,21 @@ Metrics it logs:
 
 ```text
 order.created -> checkout_started
+order.cancelled -> order_cancelled
 inventory.reserved -> inventory_reserved
 inventory.failed -> checkout_failed_out_of_stock
+inventory.release_requested -> compensation_requested
+inventory.released -> inventory_released
 payment.completed -> checkout_completed
 payment.failed -> checkout_failed_payment
 ```
 
-Why existing services do not change:
+Why Analytics can observe new events without changing publishers:
 
-- Order Service already publishes `order.created`.
-- Inventory Service already publishes `inventory.reserved` and `inventory.failed`.
-- Payment Service already publishes `payment.completed` and `payment.failed`.
-- Analytics Service only subscribes to those existing note labels.
+- Analytics binds its queue to `#`, so new routing keys such as `order.cancelled` and `inventory.released` are observed automatically.
+- Checkout publishers (Order, Inventory, Payment) do not need to know Analytics exists.
 
-In the notice-board analogy, Analytics Service gets its own service inbox and reads copies of notes that were already being posted.
+In the notice-board analogy, Analytics Service gets its own service inbox wired to all note labels on the board.
 
 Advanced note:
 
@@ -948,6 +1052,8 @@ Expected Analytics logs for an out-of-stock checkout:
 [Analytics Service] [corr_123] Metric: checkout_started
 [Analytics Service] [corr_123] Received event: inventory.failed
 [Analytics Service] [corr_123] Metric: checkout_failed_out_of_stock
+[Analytics Service] [corr_123] Received event: order.cancelled
+[Analytics Service] [corr_123] Metric: order_cancelled
 ```
 
 Expected Analytics logs for a payment failure:
@@ -959,6 +1065,12 @@ Expected Analytics logs for a payment failure:
 [Analytics Service] [corr_123] Metric: inventory_reserved
 [Analytics Service] [corr_123] Received event: payment.failed
 [Analytics Service] [corr_123] Metric: checkout_failed_payment
+[Analytics Service] [corr_123] Received event: order.cancelled
+[Analytics Service] [corr_123] Metric: order_cancelled
+[Analytics Service] [corr_123] Received event: inventory.release_requested
+[Analytics Service] [corr_123] Metric: compensation_requested
+[Analytics Service] [corr_123] Received event: inventory.released
+[Analytics Service] [corr_123] Metric: inventory_released
 ```
 
 ## Classroom Demo Plan
@@ -977,15 +1089,16 @@ Expected Analytics logs for a payment failure:
 9. Show the equivalent curl command so students see the raw HTTP request.
 10. Watch logs in each service.
 11. Send an out-of-stock checkout request.
-12. Watch how `inventory.failed` is handled.
+12. Watch how `inventory.failed` is handled and how Order Service publishes `order.cancelled`.
 13. Send a payment failure request.
-14. Show Analytics Service logs and explain that it was added without changing existing services.
-15. Stop `analytics-service` and send another checkout to show the main flow still works.
-16. Restart `analytics-service`.
-17. Stop `notification-service`.
-18. Send another successful checkout.
-19. Restart `notification-service`.
-20. Explain how durable service inboxes allow services to catch up after the service inbox has already been created.
+14. Point out `inventory.release_requested`, `inventory.released`, and restored pencil stock in Inventory logs.
+15. Show Analytics Service logs and explain the `#` binding observes all events without changing publishers.
+16. Stop `analytics-service` and send another checkout to show the main flow still works.
+17. Restart `analytics-service`.
+18. Stop `notification-service`.
+19. Send another successful checkout.
+20. Restart `notification-service`.
+21. Explain how durable service inboxes allow services to catch up after the service inbox has already been created.
 
 To stop only the notification service:
 
@@ -1019,17 +1132,21 @@ docker compose start analytics-service
 4. "RabbitMQ routes the note using the routing key label."
 5. "Inventory reacts to `order.created`."
 6. "Payment reacts to `inventory.reserved`."
-7. "Notification reacts to several outcomes."
-8. "Analytics reacts from the side using its own service inbox."
-9. "Each service owns its own behavior."
-10. "The correlation ID lets us follow one checkout across service logs."
-11. "This is eventually consistent because the API response returns before the whole workflow finishes."
+7. "Notification reacts to several customer-facing outcomes."
+8. "Order cancels itself when inventory or payment failure events arrive."
+9. "Payment asks Inventory to release stock; Payment does not edit stock directly."
+10. "Analytics reacts from the side using its own inbox bound to `#`."
+11. "Each service owns its own behavior."
+12. "The correlation ID lets us follow one checkout across service logs."
+13. "This is eventually consistent because the API response returns before payment, cancellation, and compensation finish."
 
 ## What Students Should Notice
 
-- Order Service does not import or call Inventory Service.
-- Inventory Service does not import or call Payment Service.
-- Payment Service does not import or call Notification Service.
+- Order Service does not import or call Inventory Service over HTTP.
+- Order Service still consumes `inventory.failed` and `payment.failed` events to cancel orders.
+- Inventory Service does not import or call Payment Service over HTTP.
+- Payment Service does not import or call Notification Service or Inventory over HTTP.
+- Payment Service publishes `inventory.release_requested` instead of changing stock itself.
 - Each service only knows RabbitMQ and event names.
 - A publisher posts a note and continues.
 - Consumers read matching notes from their own service inboxes.
@@ -1052,7 +1169,8 @@ Ask these while watching the logs:
 - Does checkout still work if Analytics Service is stopped?
 - What happens if Notification Service is stopped after its service inbox exists?
 - Why does the API response return before payment and notification finish?
-- What compensating event might we add after `payment.failed` in a real system?
+- Why does Payment Service publish `inventory.release_requested` instead of restoring stock itself?
+- Why can the order be `cancelled` before `inventory.released` appears in the logs?
 
 ## Common Questions Students May Ask
 
@@ -1068,7 +1186,9 @@ In the analogy, Order Service posts a note instead of walking to every service i
 
 Not immediately in this simple demo.
 
-The API returns after the order is created. Payment happens afterward through events.
+The API returns after the order is created. Payment, cancellation, and compensation happen afterward through events.
+
+The JSON response may still show `"status": "created"` even when logs later show `order.cancelled`.
 
 This is part of eventual consistency.
 
@@ -1088,9 +1208,9 @@ Because this demo uses in-memory data instead of a database.
 
 ### What happens to inventory if payment fails?
 
-In this v1 demo, nothing else happens.
+Payment Service publishes `inventory.release_requested`. Inventory Service adds the reserved quantity back to stock and publishes `inventory.released`. Order Service also publishes `order.cancelled` when it consumes `payment.failed`.
 
-In production, payment failure would trigger a compensating event to release inventory.
+Why doesn't Payment Service restore stock directly? Inventory owns stock decisions, even during compensation.
 
 ## Synchronous HTTP vs Event-Driven Messaging
 
@@ -1118,7 +1238,9 @@ In this demo, the API Gateway returns after the order is created.
 
 Inventory, payment, and notification happen shortly after through events.
 
-For a short time, the order may be created while payment is still pending.
+For a short time, the order may be `created` in the HTTP response while payment, cancellation, or compensation are still pending.
+
+After payment failure, logs may show `order.cancelled` and `inventory.released` after the browser already received the initial checkout response.
 
 In the analogy, the first note has been posted, but not every service has read and reacted to its notes yet.
 
@@ -1134,7 +1256,7 @@ This demo is intentionally simple. A real system would add:
 - Authentication and authorization.
 - Observability with logs, metrics, and traces.
 - A real payment provider.
-- Inventory release events when payment fails.
+- Idempotent compensation so duplicate `inventory.release_requested` messages cannot double-release stock.
 - Automated tests.
 - Graceful shutdown handling.
 
@@ -1149,9 +1271,10 @@ Why the timeline exists:
 
 How to use it during class:
 - Toggle between "Beginner View" and "Technical View" to explain concepts gradually.
-- Watch as the timeline visually reveals each step (API Gateway -> Order -> Inventory -> Payment -> Notification).
-- Notice that Analytics Service appears as a parallel observer. It does not block or control checkout.
-- For prepared scenarios, note that the UI uses the real `correlationId` returned by API Gateway. Search that ID in Docker Compose logs to find the real backend output.
+- Watch as the timeline visually reveals each step (API Gateway -> Order -> Inventory -> Payment -> Notification, plus cancellation and compensation on failure scenarios).
+- Use the Analytics Service panel beside the timeline to discuss observed events (scripted from the scenario, not live RabbitMQ).
+- Notice that Analytics Service is a parallel observer. It does not block or control checkout.
+- For prepared scenarios, note that the UI uses the top-level `correlationId` from the API Gateway JSON response. Search that ID in Docker Compose logs to find the real backend output.
 - For custom/manual input, the UI does not guess the async outcome. Check Docker logs and RabbitMQ Management UI for what actually happened.
 
 Important Note:

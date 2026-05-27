@@ -19,6 +19,7 @@ async function connectWithRetry() {
 
       // assertExchange declares the notice board area where event notes are posted.
       await channel.assertExchange(EXCHANGE_NAME, "topic", { durable: true });
+      channel.prefetch(1);
 
       console.log("[Order Service] Connected to RabbitMQ");
       return channel;
@@ -50,7 +51,44 @@ async function publishEvent(routingKey, event) {
   });
 }
 
+async function consumeEvents(queueName, routingKeys, handler) {
+  if (!channel) {
+    throw new Error("RabbitMQ channel is not ready");
+  }
+
+  await channel.assertQueue(queueName, { durable: true });
+
+  for (const routingKey of routingKeys) {
+    await channel.bindQueue(queueName, EXCHANGE_NAME, routingKey);
+  }
+
+  channel.consume(queueName, async (msg) => {
+    if (!msg) {
+      return;
+    }
+
+    let event;
+
+    try {
+      event = JSON.parse(msg.content.toString());
+    } catch (error) {
+      console.error("[Order Service] Invalid JSON message", error.message);
+      channel.nack(msg, false, false);
+      return;
+    }
+
+    try {
+      await handler(event);
+      channel.ack(msg);
+    } catch (error) {
+      console.error("[Order Service] Error while processing message", error.message);
+      channel.nack(msg, false, true);
+    }
+  });
+}
+
 module.exports = {
   connectWithRetry,
   publishEvent,
+  consumeEvents,
 };

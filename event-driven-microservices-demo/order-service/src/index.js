@@ -1,8 +1,11 @@
 const express = require("express");
-const { connectWithRetry, publishEvent } = require("./rabbitmq");
+const { connectWithRetry, publishEvent, consumeEvents } = require("./rabbitmq");
 
 const app = express();
 const PORT = process.env.PORT || 3001;
+
+const CHECKOUT_FAILED_QUEUE = "order_service_checkout_failed_queue";
+const CHECKOUT_FAILED_ROUTING_KEYS = ["inventory.failed", "payment.failed"];
 
 const orders = [];
 
@@ -70,11 +73,48 @@ app.post("/orders", async (req, res) => {
   }
 });
 
+async function handleCheckoutFailed(event) {
+  const { eventType, correlationId, data } = event;
+  const { orderId } = data;
+
+  console.log(`[Order Service] [${correlationId}] Received event: ${eventType}`);
+
+  const order = orders.find((entry) => entry.orderId === orderId);
+
+  if (!order) {
+    console.log(`[Order Service] [${correlationId}] No order found for ${orderId}`);
+    return;
+  }
+
+  if (order.status === "cancelled") {
+    console.log(`[Order Service] [${correlationId}] Order ${orderId} is already cancelled`);
+    return;
+  }
+
+  order.status = "cancelled";
+
+  console.log(`[Order Service] [${correlationId}] Cancelled order ${orderId} because of ${eventType}`);
+
+  const cancelledEvent = createEvent("order.cancelled", correlationId, {
+    orderId,
+    reason: eventType,
+    userId: order.userId,
+    productId: order.productId,
+    quantity: order.quantity,
+  });
+
+  await publishEvent("order.cancelled", cancelledEvent);
+
+  console.log(`[Order Service] [${correlationId}] Published event: order.cancelled`);
+}
+
 async function start() {
   await connectWithRetry();
+  await consumeEvents(CHECKOUT_FAILED_QUEUE, CHECKOUT_FAILED_ROUTING_KEYS, handleCheckoutFailed);
 
   app.listen(PORT, () => {
     console.log(`[Order Service] Listening on port ${PORT}`);
+    console.log("[Order Service] Waiting for inventory.failed and payment.failed events");
   });
 }
 

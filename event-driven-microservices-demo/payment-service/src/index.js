@@ -47,6 +47,15 @@ async function handleInventoryReserved(event) {
     await publishEvent("payment.failed", paymentFailedEvent);
 
     console.log(`[Payment Service] [${correlationId}] Published event: payment.failed`);
+
+    const releaseRequestedEvent = createEvent("inventory.release_requested", correlationId, {
+      ...data,
+      reason: "Payment failed; release reserved stock",
+    });
+
+    await publishEvent("inventory.release_requested", releaseRequestedEvent);
+
+    console.log(`[Payment Service] [${correlationId}] Published event: inventory.release_requested`);
     return;
   }
 

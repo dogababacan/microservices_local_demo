@@ -226,12 +226,19 @@
       .timeline-wrapper {
         position: relative;
         display: grid;
-        grid-template-columns: 1fr 300px;
+        grid-template-columns: minmax(0, 1fr) minmax(320px, 400px);
         gap: 24px;
         align-items: start;
       }
       @media (max-width: 1200px) {
         .timeline-wrapper { grid-template-columns: 1fr; }
+        .global-observers.active {
+          min-height: 360px;
+          max-height: none;
+        }
+        .analytics-log-container {
+          min-height: 260px;
+        }
       }
 
       .timeline { display: flex; flex-direction: column; gap: 16px; position: relative; }
@@ -293,37 +300,47 @@
       .global-observers {
         position: sticky;
         top: 24px;
+        display: none;
+        flex-direction: column;
+        min-height: 420px;
+        max-height: min(80vh, 640px);
         background: rgba(15, 23, 42, 0.85);
         backdrop-filter: blur(12px);
         border: 1px solid var(--border);
         border-radius: 12px;
-        padding: 16px;
+        padding: 20px;
         box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         opacity: 0;
         transform: translateY(10px);
-        transition: all 0.4s ease;
-        display: none;
+        transition: opacity 0.4s ease, transform 0.4s ease;
       }
       .global-observers.active {
-        display: block;
+        display: flex;
         opacity: 1;
         transform: translateY(0);
       }
       .observer-title {
         font-family: 'Outfit', sans-serif;
-        font-size: 1.1rem;
+        font-size: 1.15rem;
         font-weight: 600;
         color: #fff;
-        margin-bottom: 8px;
+        margin-bottom: 12px;
         display: flex;
         align-items: center;
         gap: 8px;
+        flex-shrink: 0;
       }
       .observer-title svg { color: #a855f7; }
       .observer-body {
-        font-size: 0.85rem;
+        font-size: 0.9rem;
         color: var(--text-muted);
-        margin-bottom: 12px;
+        margin-bottom: 16px;
+        flex-shrink: 0;
+        line-height: 1.5;
+      }
+      #analytics-status {
+        font-size: 0.9rem;
+        line-height: 1.4;
       }
       .pulse-indicator {
         width: 10px;
@@ -343,12 +360,15 @@
         100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(168, 85, 247, 0); }
       }
       .analytics-log-container {
-        margin-top: 12px;
-        max-height: 140px;
+        flex: 1 1 auto;
+        margin-top: 4px;
+        min-height: 300px;
+        max-height: none;
         overflow-y: auto;
         display: flex;
         flex-direction: column;
-        gap: 6px;
+        gap: 8px;
+        padding: 4px 2px 4px 0;
         scrollbar-width: thin;
         scrollbar-color: rgba(168, 85, 247, 0.5) transparent;
       }
@@ -358,14 +378,17 @@
       .log-entry {
         background: rgba(0,0,0,0.3);
         border: 1px solid rgba(168, 85, 247, 0.3);
-        padding: 8px 10px;
+        padding: 10px 12px;
         border-radius: 6px;
         font-family: 'JetBrains Mono', monospace;
-        font-size: 0.75rem;
+        font-size: 0.8rem;
+        line-height: 1.45;
         color: var(--text-code);
+        word-break: break-word;
         animation: slideIn 0.3s ease forwards;
         opacity: 0;
         transform: translateX(-10px);
+        flex-shrink: 0;
       }
       .log-entry .keyword { color: #a855f7; }
       .log-entry .string { color: #10b981; }
@@ -557,23 +580,23 @@
                 </tr>
                 <tr>
                   <td>Order Service</td>
-                  <td>Creates orders</td>
+                  <td>Creates and cancels orders</td>
                   <td>Yes</td>
-                  <td><code>order.created</code></td>
-                  <td>-</td>
+                  <td><code>order.created</code>, <br><code>order.cancelled</code></td>
+                  <td><code>inventory.failed</code>, <br><code>payment.failed</code></td>
                 </tr>
                 <tr>
                   <td>Inventory Service</td>
-                  <td>Checks stock</td>
+                  <td>Checks stock and compensates</td>
                   <td>No</td>
-                  <td><code>inventory.reserved</code>, <br><code>inventory.failed</code></td>
-                  <td><code>order.created</code></td>
+                  <td><code>inventory.reserved</code>, <br><code>inventory.failed</code>, <br><code>inventory.released</code></td>
+                  <td><code>order.created</code>, <br><code>inventory.release_requested</code></td>
                 </tr>
                 <tr>
                   <td>Payment Service</td>
                   <td>Simulates payment</td>
                   <td>No</td>
-                  <td><code>payment.completed</code>, <br><code>payment.failed</code></td>
+                  <td><code>payment.completed</code>, <br><code>payment.failed</code>, <br><code>inventory.release_requested</code></td>
                   <td><code>inventory.reserved</code></td>
                 </tr>
                 <tr>
@@ -633,12 +656,13 @@
               <div class="accordion-content">
                 <ul class="explorer-list">
                   <li><strong>Port:</strong> 3001</li>
-                  <li><strong>Style:</strong> HTTP + RabbitMQ Producer</li>
-                  <li><strong>Main job:</strong> Creates an in-memory order</li>
+                  <li><strong>Style:</strong> HTTP + RabbitMQ Producer + Consumer</li>
+                  <li><strong>Main job:</strong> Creates and cancels in-memory orders</li>
                   <li><strong>Endpoint:</strong> POST /orders</li>
-                  <li><strong>Publishes:</strong> <code>order.created</code></li>
-                  <li><strong>Queue:</strong> none</li>
-                  <li><strong>Analogy:</strong> Posts an order.created note to the notice board.</li>
+                  <li><strong>Publishes:</strong> <code>order.created</code>, <code>order.cancelled</code></li>
+                  <li><strong>Consumes:</strong> <code>inventory.failed</code>, <code>payment.failed</code></li>
+                  <li><strong>Queue (Inbox):</strong> <code>order_service_checkout_failed_queue</code></li>
+                  <li><strong>Analogy:</strong> Posts order notes and cancels orders when checkout cannot finish.</li>
                   <li><strong>Notice:</strong> It does NOT import or call Inventory Service directly.</li>
                 </ul>
               </div>
@@ -657,10 +681,10 @@
                   <li><strong>Port:</strong> 3002</li>
                   <li><strong>Style:</strong> Consumer + Producer</li>
                   <li><strong>Main job:</strong> Checks and reserves stock</li>
-                  <li><strong>Publishes:</strong> <code>inventory.reserved</code>, <code>inventory.failed</code></li>
-                  <li><strong>Consumes:</strong> <code>order.created</code></li>
-                  <li><strong>Queue (Inbox):</strong> <code>inventory_service_order_created_queue</code></li>
-                  <li><strong>Notice:</strong> It reacts to Order Service's event, then publishes its own.</li>
+                  <li><strong>Publishes:</strong> <code>inventory.reserved</code>, <code>inventory.failed</code>, <code>inventory.released</code></li>
+                  <li><strong>Consumes:</strong> <code>order.created</code>, <code>inventory.release_requested</code></li>
+                  <li><strong>Queues (Inbox):</strong> <code>inventory_service_order_created_queue</code>, <code>inventory_service_release_requested_queue</code></li>
+                  <li><strong>Notice:</strong> Only Inventory Service changes stock, including compensation after payment failure.</li>
                 </ul>
               </div>
             </div>
@@ -678,10 +702,10 @@
                   <li><strong>Port:</strong> 3003</li>
                   <li><strong>Style:</strong> Consumer + Producer</li>
                   <li><strong>Main job:</strong> Simulates payment</li>
-                  <li><strong>Publishes:</strong> <code>payment.completed</code>, <code>payment.failed</code></li>
+                  <li><strong>Publishes:</strong> <code>payment.completed</code>, <code>payment.failed</code>, <code>inventory.release_requested</code></li>
                   <li><strong>Consumes:</strong> <code>inventory.reserved</code></li>
                   <li><strong>Queue (Inbox):</strong> <code>payment_service_inventory_reserved_queue</code></li>
-                  <li><strong>Notice:</strong> Payment only starts AFTER inventory is reserved.</li>
+                  <li><strong>Notice:</strong> Payment requests stock release; it does not restore inventory itself.</li>
                 </ul>
               </div>
             </div>
@@ -815,6 +839,7 @@
           { service: "API Gateway", action: "Received HTTP Request", isSuccess: true, beginnerExp: "Takes the request.", beginnerAnalogy: "Customer talks to front desk.", technicalExp: "Receives POST /checkout.", technicalDetails: { type: "HTTP POST" } },
           { service: "Order Service", action: "Created Order", event: "order.created", isSuccess: true, beginnerExp: "Creates order.", beginnerAnalogy: "Posts 'order.created' note.", technicalExp: "Publishes event.", technicalDetails: { routingKey: "order.created" } },
           { service: "Inventory Service", action: "Stock Failed", event: "inventory.failed", isError: true, beginnerExp: "Sees item is out of stock.", beginnerAnalogy: "Checks shelf, posts 'inventory.failed'.", technicalExp: "Consumes order.created, publishes fail.", technicalDetails: { queue: "inventory_service_...", routingKey: "inventory.failed" } },
+          { service: "Order Service", action: "Cancelled Order", event: "order.cancelled", isError: true, beginnerExp: "Marks the order cancelled because checkout cannot finish.", beginnerAnalogy: "Reads fail note and posts 'order.cancelled'.", technicalExp: "Consumes inventory.failed, publishes order.cancelled.", technicalDetails: { queue: "order_service_checkout_failed_queue", routingKey: "order.cancelled" } },
           { service: "Notification Service", action: "Out-of-Stock Message", isError: true, beginnerExp: "Tells customer out of stock.", beginnerAnalogy: "Reads fail note, apologizes.", technicalExp: "Consumes inventory.failed, logs message.", technicalDetails: { queue: "notification_service_..." } }
         ],
         paymentFailure: [
@@ -822,7 +847,10 @@
           { service: "Order Service", action: "Created Order", event: "order.created", isSuccess: true, beginnerExp: "Creates order.", beginnerAnalogy: "Posts note.", technicalExp: "Publishes event.", technicalDetails: { routingKey: "order.created" } },
           { service: "Inventory Service", action: "Reserved Inventory", event: "inventory.reserved", isSuccess: true, beginnerExp: "Checks stock.", beginnerAnalogy: "Posts reserved note.", technicalExp: "Publishes reserved.", technicalDetails: { routingKey: "inventory.reserved" } },
           { service: "Payment Service", action: "Payment Failed", event: "payment.failed", isError: true, beginnerExp: "Card declined.", beginnerAnalogy: "Posts 'payment.failed'.", technicalExp: "Publishes failed.", technicalDetails: { routingKey: "payment.failed" } },
-          { service: "Notification Service", action: "Failure Message", isError: true, beginnerExp: "Tells customer payment failed.", beginnerAnalogy: "Reads fail note, apologizes.", technicalExp: "Logs failure.", technicalDetails: { queue: "notification_service_..." } }
+          { service: "Notification Service", action: "Failure Message", isError: true, beginnerExp: "Tells customer payment failed.", beginnerAnalogy: "Reads fail note, apologizes.", technicalExp: "Logs failure.", technicalDetails: { queue: "notification_service_..." } },
+          { service: "Order Service", action: "Cancelled Order", event: "order.cancelled", isError: true, beginnerExp: "Marks the order cancelled after payment fails.", beginnerAnalogy: "Reads payment.failed and posts order.cancelled.", technicalExp: "Consumes payment.failed, publishes order.cancelled.", technicalDetails: { routingKey: "order.cancelled" } },
+          { service: "Payment Service", action: "Requested Stock Release", event: "inventory.release_requested", isError: true, beginnerExp: "Asks Inventory to undo the reservation.", beginnerAnalogy: "Posts a compensation note instead of changing stock directly.", technicalExp: "Publishes inventory.release_requested after payment.failed.", technicalDetails: { routingKey: "inventory.release_requested" } },
+          { service: "Inventory Service", action: "Released Inventory", event: "inventory.released", isSuccess: true, beginnerExp: "Adds stock back so inventory matches reality.", beginnerAnalogy: "Reads release note and posts inventory.released.", technicalExp: "Consumes release_requested, publishes inventory.released.", technicalDetails: { queue: "inventory_service_release_requested_queue", routingKey: "inventory.released" } }
         ],
         invalid: [
           { service: "API Gateway", action: "Rejected Request", isError: true, beginnerExp: "Checks request, missing data.", beginnerAnalogy: "Front desk rejects incomplete form.", technicalExp: "Validation fails, returns 400.", technicalDetails: { type: "HTTP Validation" } }
@@ -936,7 +964,7 @@
           else if (payload.productId === 'laptop') sType = 'outOfStock';
           else if (payload.userId === 'fail-payment') sType = 'paymentFailure';
           
-          currentCorrelationId = body?.order?.correlationId || 'corr_' + Math.random().toString(16).slice(2, 8);
+          currentCorrelationId = body?.correlationId || 'corr_' + Math.random().toString(16).slice(2, 8);
           timelineContainer.innerHTML = '';
           
           const steps = scenariosData[sType];

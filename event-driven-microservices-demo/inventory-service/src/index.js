@@ -4,7 +4,8 @@ const { connectWithRetry, consumeEvent, publishEvent } = require("./rabbitmq");
 const app = express();
 const PORT = process.env.PORT || 3002;
 
-const QUEUE_NAME = "inventory_service_order_created_queue";
+const ORDER_CREATED_QUEUE = "inventory_service_order_created_queue";
+const RELEASE_REQUESTED_QUEUE = "inventory_service_release_requested_queue";
 
 // This stock lives only in memory. It is perfect for teaching, but it resets
 // whenever the Inventory Service restarts.
@@ -77,13 +78,42 @@ async function handleOrderCreated(event) {
   console.log(`[Inventory Service] [${correlationId}] Published event: inventory.failed`);
 }
 
+async function handleReleaseRequested(event) {
+  const { correlationId, data } = event;
+  const { orderId, productId, quantity, reservedQuantity } = data;
+  const releaseQuantity = reservedQuantity ?? quantity;
+
+  console.log(`[Inventory Service] [${correlationId}] Received event: inventory.release_requested`);
+
+  if (!(productId in stock)) {
+    console.log(`[Inventory Service] [${correlationId}] Unknown product ${productId}; cannot release stock`);
+    return;
+  }
+
+  stock[productId] = (stock[productId] || 0) + releaseQuantity;
+
+  const inventoryReleasedEvent = createEvent("inventory.released", correlationId, {
+    ...data,
+    releasedQuantity: releaseQuantity,
+    remainingStock: stock[productId],
+    orderId,
+  });
+
+  await publishEvent("inventory.released", inventoryReleasedEvent);
+
+  console.log(`[Inventory Service] [${correlationId}] Released reservation for order ${orderId}`);
+  console.log(`[Inventory Service] [${correlationId}] Published event: inventory.released`);
+  console.log(`[Inventory Service] [${correlationId}] Remaining ${productId} stock: ${stock[productId]}`);
+}
+
 async function start() {
   await connectWithRetry();
-  await consumeEvent(QUEUE_NAME, "order.created", handleOrderCreated);
+  await consumeEvent(ORDER_CREATED_QUEUE, "order.created", handleOrderCreated);
+  await consumeEvent(RELEASE_REQUESTED_QUEUE, "inventory.release_requested", handleReleaseRequested);
 
   app.listen(PORT, () => {
     console.log(`[Inventory Service] Listening on port ${PORT}`);
-    console.log(`[Inventory Service] Waiting for order.created events`);
+    console.log("[Inventory Service] Waiting for order.created and inventory.release_requested events");
   });
 }
 
