@@ -38,6 +38,35 @@ app.get("/health", (req, res) => {
   });
 });
 
+app.get("/stock", (req, res) => {
+  res.json({
+    service: "inventory-service",
+    stock,
+  });
+});
+
+app.get("/stock/:productId", (req, res) => {
+  const { productId } = req.params;
+
+  res.json({
+    service: "inventory-service",
+    productId,
+    stock: stock[productId] ?? 0,
+  });
+});
+
+app.post("/reset", (req, res) => {
+  stock.pencil = 10;
+  stock.notebook = 5;
+  stock.laptop = 0;
+  console.log("[Inventory Service] Stock has been reset to defaults");
+  res.json({
+    service: "inventory-service",
+    message: "Stock has been reset",
+    stock,
+  });
+});
+
 async function handleOrderCreated(event) {
   const { correlationId, data } = event;
   const { orderId, productId, quantity } = data;

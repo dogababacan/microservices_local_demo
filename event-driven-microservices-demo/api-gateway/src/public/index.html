@@ -222,11 +222,45 @@
       .diagram-box span.highlight { color: var(--primary); font-weight: bold; }
       .diagram-box span.analytics-highlight { color: #a855f7; font-weight: bold; }
 
+      /* Classroom Mode Toggles (session-only) */
+      .classroom-toggles {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px 14px;
+        align-items: center;
+        margin-bottom: 14px;
+        padding: 12px 14px;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        background: rgba(0,0,0,0.22);
+      }
+      .classroom-toggles .note {
+        color: var(--text-muted);
+        font-size: 0.82rem;
+      }
+
+      body.presentation-mode {
+        font-size: 18px;
+      }
+      body.presentation-mode h1 { letter-spacing: -0.01em; }
+      body.presentation-mode .timeline-card { padding: 24px; }
+      body.presentation-mode .diagram-box { font-size: 0.95rem; }
+      body.presentation-mode pre { font-size: 0.95rem; }
+
+      body.reduce-animations * {
+        animation: none !important;
+        transition: none !important;
+      }
+
+      body.expand-tech[data-view="technical"] .content-technical {
+        display: block !important;
+      }
+
       /* Timeline Wrapper */
       .timeline-wrapper {
         position: relative;
         display: grid;
-        grid-template-columns: minmax(0, 1fr) minmax(320px, 400px);
+        grid-template-columns: minmax(0, 1fr) minmax(340px, 440px);
         gap: 24px;
         align-items: start;
       }
@@ -296,14 +330,114 @@
       .technical-details li { margin-bottom: 4px; }
       .technical-details strong { color: var(--primary); font-weight: normal;}
 
+      .because-line {
+        margin-top: 10px;
+        padding: 10px 12px;
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid var(--border);
+        color: var(--text-muted);
+        font-size: 0.9rem;
+      }
+      .because-line strong { color: #fff; font-weight: 600; }
+
+      /* State Panel */
+      .state-panel {
+        position: relative;
+        background: rgba(15, 23, 42, 0.85);
+        backdrop-filter: blur(12px);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 16px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        margin-bottom: 16px;
+      }
+
+      /* Sidebar stack: keeps State + Analytics together while scrolling */
+      .sidebar-stack {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+      @media (min-height: 800px) {
+        .sidebar-stack {
+          position: sticky;
+          top: 24px;
+        }
+      }
+      .state-title {
+        font-family: 'Outfit', sans-serif;
+        font-size: 1.05rem;
+        font-weight: 600;
+        color: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        margin-bottom: 10px;
+      }
+      .state-subtitle {
+        color: var(--text-muted);
+        font-size: 0.85rem;
+        margin-bottom: 12px;
+      }
+      .state-grid {
+        display: grid;
+        gap: 12px;
+      }
+      .state-card {
+        background: rgba(0,0,0,0.25);
+        border: 1px solid rgba(255,255,255,0.06);
+        border-radius: 10px;
+        padding: 12px;
+      }
+      .state-card h4 {
+        margin: 0 0 8px;
+        font-family: 'Outfit', sans-serif;
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: #fff;
+      }
+      .state-row {
+        display: grid;
+        grid-template-columns: 120px 1fr;
+        gap: 10px;
+        padding: 6px 0;
+        border-bottom: 1px solid rgba(255,255,255,0.05);
+      }
+      .state-row:last-child { border-bottom: none; }
+      .state-key { color: var(--text-muted); font-size: 0.85rem; }
+      .state-val { color: var(--text-main); font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; word-break: break-word; }
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 8px;
+        border-radius: 999px;
+        font-size: 0.78rem;
+        border: 1px solid rgba(255,255,255,0.1);
+        color: var(--text-muted);
+        background: rgba(255,255,255,0.03);
+        white-space: nowrap;
+      }
+      .pill strong { color: #fff; font-weight: 600; }
+      .toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.85rem;
+        color: var(--text-muted);
+        user-select: none;
+      }
+      .toggle input { transform: translateY(1px); }
+
       /* Global Observers Panel */
       .global-observers {
-        position: sticky;
-        top: 24px;
+        position: relative;
         display: none;
         flex-direction: column;
-        min-height: 420px;
-        max-height: min(80vh, 640px);
+        min-height: auto;
+        max-height: none;
         background: rgba(15, 23, 42, 0.85);
         backdrop-filter: blur(12px);
         border: 1px solid var(--border);
@@ -430,6 +564,547 @@
 
       /* Icons */
       .icon { width: 1.2em; height: 1.2em; vertical-align: middle; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+      /* Floating settings popover */
+      .settings-wrapper {
+        position: relative;
+        display: inline-block;
+      }
+      .settings-btn {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid var(--border);
+        color: var(--text-muted);
+        padding: 10px;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .settings-btn:hover, .settings-btn.active {
+        background: rgba(255, 255, 255, 0.12);
+        color: #fff;
+        border-color: var(--border-light);
+      }
+      .settings-popover {
+        position: absolute;
+        right: 0;
+        top: calc(100% + 8px);
+        background: rgba(15, 23, 42, 0.95);
+        backdrop-filter: var(--glass-blur);
+        -webkit-backdrop-filter: var(--glass-blur);
+        border: 1px solid var(--border-light);
+        border-radius: 12px;
+        padding: 16px;
+        width: 280px;
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5);
+        display: none;
+        z-index: 100;
+        animation: popoverFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      }
+      .settings-popover.active {
+        display: block;
+      }
+      @keyframes popoverFadeIn {
+        from { opacity: 0; transform: translateY(-5px) scale(0.98); }
+        to { opacity: 1; transform: translateY(0) scale(1); }
+      }
+      .settings-popover h3 {
+        font-size: 0.95rem;
+        margin: 0 0 12px;
+        border-bottom: 1px solid var(--border);
+        padding-bottom: 6px;
+        letter-spacing: 0.02em;
+        font-family: 'Outfit', sans-serif;
+      }
+      .settings-popover .toggle {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 10px;
+        cursor: pointer;
+        font-size: 0.85rem;
+        color: var(--text-code);
+      }
+      .settings-popover .note {
+        font-size: 0.75rem;
+        color: var(--text-muted);
+        display: block;
+        margin-top: 10px;
+        text-align: center;
+      }
+
+      /* Classroom Interactive Exercises Checklist */
+      .exercise-checklist {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin-top: 10px;
+      }
+      .exercise-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        background: rgba(0, 0, 0, 0.15);
+        border: 1px solid var(--border);
+        padding: 10px 12px;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        user-select: none;
+      }
+      .exercise-item:hover {
+        background: rgba(255, 255, 255, 0.02);
+        border-color: var(--border-light);
+      }
+      .exercise-item input[type="checkbox"] {
+        margin-top: 3px;
+        cursor: pointer;
+        width: 16px;
+        height: 16px;
+        accent-color: var(--primary);
+      }
+      .exercise-content {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        font-size: 0.85rem;
+        color: var(--text-muted);
+        line-height: 1.4;
+      }
+      .exercise-content strong {
+        color: #fff;
+        font-size: 0.9rem;
+      }
+      .exercise-item.checked {
+        border-color: rgba(16, 185, 129, 0.3);
+        background: rgba(16, 185, 129, 0.02);
+      }
+      .exercise-item.checked .exercise-content strong {
+        text-decoration: line-through;
+        color: var(--success);
+        opacity: 0.8;
+      }
+      .exercise-item.checked .exercise-content span {
+        text-decoration: line-through;
+        opacity: 0.5;
+      }
+
+      /* Because Line (Cause & Effect) */
+      .because-card {
+        margin-top: 12px;
+        background: rgba(245, 158, 11, 0.04);
+        border: 1px solid rgba(245, 158, 11, 0.15);
+        border-left: 3px solid var(--warning);
+        border-radius: 8px;
+        padding: 10px 14px;
+        display: flex;
+        gap: 10px;
+        align-items: flex-start;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.01);
+      }
+      .because-icon {
+        color: var(--warning);
+        flex-shrink: 0;
+        margin-top: 2px;
+      }
+      .because-content {
+        font-size: 0.85rem;
+        color: var(--text-muted);
+        line-height: 1.45;
+      }
+      .because-label {
+        font-family: 'Outfit', sans-serif;
+        font-weight: 600;
+        color: #fff;
+        display: block;
+        font-size: 0.8rem;
+        letter-spacing: 0.05em;
+        margin-bottom: 2px;
+      }
+
+      /* Scenario State Visualizer Card Designs */
+      .state-card {
+        background: rgba(0,0,0,0.3);
+        border: 1px solid rgba(255,255,255,0.06);
+        border-radius: 12px;
+        padding: 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.03);
+      }
+      .state-card .card-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid rgba(255,255,255,0.05);
+        padding-bottom: 8px;
+        margin-bottom: 2px;
+      }
+      .state-card h4 {
+        margin: 0;
+        font-size: 0.95rem;
+        color: #fff;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .state-card .product-badge, .state-card .order-id-badge {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.78rem;
+        padding: 2px 8px;
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        color: #fff;
+      }
+      .state-card .order-id-badge {
+        color: var(--primary);
+        background: rgba(59, 130, 246, 0.1);
+        border-color: rgba(59, 130, 246, 0.2);
+      }
+      
+      /* Order Flow Stepper styling */
+      .order-flow-visual {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 8px;
+        background: rgba(0, 0, 0, 0.2);
+        border-radius: 8px;
+        border: 1px solid rgba(255,255,255,0.03);
+      }
+      .flow-step {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+        flex: 1;
+        position: relative;
+      }
+      .flow-step .step-dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.15);
+        border: 2px solid rgba(255, 255, 255, 0.05);
+        transition: all 0.3s ease;
+      }
+      .flow-step .step-label {
+        font-size: 0.75rem;
+        color: var(--text-muted);
+        font-weight: 500;
+      }
+      .flow-arrow {
+        font-size: 0.75rem;
+        color: rgba(255, 255, 255, 0.15);
+        user-select: none;
+      }
+      .flow-step.active-blue .step-dot {
+        background: var(--primary);
+        border-color: rgba(59, 130, 246, 0.3);
+        box-shadow: 0 0 10px var(--primary);
+      }
+      .flow-step.active-blue .step-label {
+        color: var(--primary);
+        font-weight: 600;
+      }
+      .flow-step.active-green .step-dot {
+        background: var(--success);
+        border-color: rgba(16, 185, 129, 0.3);
+        box-shadow: 0 0 10px var(--success);
+      }
+      .flow-step.active-green .step-label {
+        color: var(--success);
+        font-weight: 600;
+      }
+      .flow-step.active-red .step-dot {
+        background: var(--danger);
+        border-color: rgba(239, 68, 68, 0.3);
+        box-shadow: 0 0 10px var(--danger);
+      }
+      .flow-step.active-red .step-label {
+        color: var(--danger);
+        font-weight: 600;
+      }
+
+      /* Inventory Flow Stock Balance visual */
+      .inventory-flow-visual {
+        display: grid;
+        grid-template-columns: 1fr auto 1fr;
+        align-items: center;
+        gap: 8px;
+        background: rgba(0, 0, 0, 0.2);
+        padding: 10px;
+        border-radius: 8px;
+        border: 1px solid rgba(255,255,255,0.03);
+      }
+      .stock-box {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+        background: rgba(255,255,255,0.02);
+        border: 1px solid var(--border);
+        padding: 6px;
+        border-radius: 6px;
+        text-align: center;
+      }
+      .stock-box .box-label {
+        font-size: 0.65rem;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        color: var(--text-muted);
+      }
+      .stock-box .box-val {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: #fff;
+      }
+      .flow-delta-arrow {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+        min-width: 60px;
+      }
+      .arrow-line {
+        width: 100%;
+        height: 1px;
+        background: linear-gradient(to right, rgba(255,255,255,0.1), rgba(255,255,255,0.3), rgba(255,255,255,0.1));
+        position: relative;
+      }
+      .arrow-line::after {
+        content: '►';
+        font-size: 0.5rem;
+        color: rgba(255,255,255,0.3);
+        position: absolute;
+        right: 0;
+        top: -4px;
+      }
+      .flow-delta-arrow .delta-pill {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.75rem;
+        font-weight: 600;
+        padding: 1px 6px;
+        border-radius: 4px;
+        background: rgba(255,255,255,0.05);
+        border: 1px solid var(--border);
+        color: var(--text-muted);
+      }
+      .flow-delta-arrow .delta-pill.minus {
+        background: var(--danger-bg);
+        border-color: rgba(239, 68, 68, 0.2);
+        color: var(--danger);
+      }
+      .flow-delta-arrow .delta-pill.plus {
+        background: var(--success-bg);
+        border-color: rgba(16, 185, 129, 0.2);
+        color: var(--success);
+      }
+      .state-meta-row {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.75rem;
+        color: var(--text-muted);
+        margin-top: -2px;
+      }
+      .state-meta-row strong {
+        color: var(--text-code);
+        font-family: 'JetBrains Mono', monospace;
+        font-weight: 500;
+      }
+
+      /* Service Explorer Card Layout */
+      .service-metadata {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px 12px;
+        margin-bottom: 16px;
+        background: rgba(0, 0, 0, 0.25);
+        padding: 10px 14px;
+        border-radius: 8px;
+        border: 1px solid var(--border);
+      }
+      .meta-badge {
+        font-size: 0.8rem;
+        color: var(--text-muted);
+      }
+      .meta-badge strong {
+        color: #fff;
+        font-weight: 500;
+      }
+      .meta-badge code {
+        background: rgba(0,0,0,0.4);
+        border-color: rgba(255,255,255,0.05);
+        padding: 1px 4px;
+      }
+      .explorer-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 16px;
+        margin-top: 14px;
+      }
+      .explorer-card {
+        background: rgba(0, 0, 0, 0.25);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        transition: all 0.2s ease;
+      }
+      .explorer-card:hover {
+        border-color: var(--border-light);
+        background: rgba(255,255,255,0.01);
+      }
+      .explorer-card.card-owns {
+        border-left: 3px solid var(--success);
+        background: rgba(16, 185, 129, 0.01);
+      }
+      .explorer-card.card-does-not-own {
+        border-left: 3px solid var(--warning);
+        background: rgba(245, 158, 11, 0.01);
+      }
+      .explorer-card.card-why {
+        border-left: 3px solid var(--primary);
+        background: rgba(59, 130, 246, 0.01);
+      }
+      .explorer-card-header {
+        font-family: 'Outfit', sans-serif;
+        font-size: 0.88rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .explorer-card.card-owns .explorer-card-header { color: var(--success); }
+      .explorer-card.card-does-not-own .explorer-card-header { color: var(--warning); }
+      .explorer-card.card-why .explorer-card-header { color: var(--primary); }
+      .explorer-card-body {
+        font-size: 0.82rem;
+        color: var(--text-muted);
+        line-height: 1.45;
+      }
+      .explorer-card-body ul {
+        margin: 4px 0 0;
+        padding-left: 16px;
+      }
+      .explorer-card-body li {
+        margin-bottom: 2px;
+      }
+
+      /* RabbitMQ routing diagram */
+      .diagram-routing {
+        display: grid;
+        grid-template-columns: 180px 1fr 240px;
+        gap: 16px;
+        align-items: center;
+        margin-top: 16px;
+        background: rgba(0, 0, 0, 0.4);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 20px;
+        overflow-x: auto;
+      }
+      @media (max-width: 768px) {
+        .diagram-routing {
+          grid-template-columns: 1fr;
+          text-align: center;
+          gap: 20px;
+        }
+        .diagram-connector {
+          height: 60px;
+          margin: 10px 0;
+        }
+        .arrow-flow {
+          transform: rotate(90deg);
+          height: 60px !important;
+        }
+      }
+      .diagram-node {
+        background: rgba(30, 41, 59, 0.8);
+        border: 1px solid var(--border-light);
+        border-radius: 8px;
+        padding: 10px 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+      }
+      .diagram-node.exchange-node {
+        border-color: var(--primary);
+        box-shadow: 0 0 15px rgba(59, 130, 246, 0.15);
+      }
+      .diagram-node.queue-node {
+        border-color: #a855f7;
+        box-shadow: 0 0 15px rgba(168, 85, 247, 0.15);
+        margin-bottom: 4px;
+      }
+      .node-type {
+        font-size: 0.7rem;
+        font-weight: 600;
+        color: var(--text-muted);
+        letter-spacing: 0.1em;
+      }
+      .node-name {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.8rem;
+        color: #fff;
+        word-break: break-all;
+      }
+      .diagram-connector {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+      }
+      .routing-key-tag {
+        background: rgba(245, 158, 11, 0.15);
+        border: 1px solid rgba(245, 158, 11, 0.3);
+        color: var(--warning);
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.75rem;
+        padding: 4px 8px;
+        border-radius: 6px;
+        z-index: 2;
+        white-space: nowrap;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+      }
+      .arrow-flow {
+        width: 100%;
+        height: 50px;
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1;
+      }
+      .flow-svg {
+        width: 100%;
+        height: 100%;
+      }
+      .diagram-queues {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .flow-dash {
+        stroke-dasharray: 6, 6;
+        animation: march 4s linear infinite;
+      }
+      @keyframes march {
+        to { stroke-dashoffset: -40; }
+      }
     </style>
   </head>
   <body>
@@ -492,6 +1167,19 @@
           <div style="margin-bottom: 12px;">
             <span id="status" class="status-badge">Waiting for request</span>
           </div>
+          <div id="async-note" style="display: none; margin: 12px 0 0; padding: 12px 14px; border-radius: 10px; border: 1px solid rgba(245, 158, 11, 0.25); background: rgba(245, 158, 11, 0.08); color: var(--text-muted);">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <div style="font-weight: 600; color: #fff; display: flex; align-items: center; gap: 6px; font-size: 0.95rem;">
+                <svg class="icon" viewBox="0 0 24 24" style="color: var(--warning);"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0zM12 9v4M12 17h.01"/></svg>
+                Async Note (Eventual Consistency)
+              </div>
+              <button type="button" id="btn-why-async" class="ctrl-btn" style="padding: 2px 8px; font-size: 0.72rem; margin: 0;">How is this possible?</button>
+            </div>
+            <div id="async-note-details" style="display: none; margin-top: 10px; border-top: 1px solid rgba(245, 158, 11, 0.15); padding-top: 8px; font-size: 0.85rem; line-height: 1.45;">
+              <p style="margin-bottom: 8px;">The HTTP checkout request returns a synchronous <code>202 Accepted</code> response immediately after the Order Service creates the initial record, confirming the request has been received.</p>
+              <p style="margin-bottom: 0;">However, downstream validation (such as payment processing or stock reservation) occurs asynchronously via RabbitMQ. If these downstream events fail, compensating transactions are triggered, which asynchronously cancel the order in the background, updating the Order Service record eventually.</p>
+            </div>
+          </div>
           <pre id="response-output">Results will appear here...</pre>
         </section>
       </div>
@@ -507,12 +1195,73 @@
         <section id="timeline-tab" class="tab-pane active">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
             <h2 style="margin: 0;">Live Event Flow</h2>
-            <div class="view-toggle">
-              <button id="btn-beginner" class="active">Beginner (Notice Board)</button>
-              <button id="btn-technical">Technical (RabbitMQ)</button>
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <div class="view-toggle" style="margin-bottom: 0;">
+                <button id="btn-beginner" class="active">Beginner (Notice Board)</button>
+                <button id="btn-technical">Technical (RabbitMQ)</button>
+              </div>
+              <div class="settings-wrapper">
+                <button id="settings-btn" class="settings-btn" title="Classroom Settings">
+                  <svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+                </button>
+                <div id="settings-popover" class="settings-popover">
+                  <h3>Classroom Settings</h3>
+                  <label class="toggle"><input id="toggle-presentation" type="checkbox"> Presentation mode</label>
+                  <label class="toggle"><input id="toggle-reduce-animations" type="checkbox"> Reduce animations</label>
+                  <label class="toggle"><input id="toggle-expand-tech" type="checkbox"> Expand technical details</label>
+                  <div style="border-top: 1px solid var(--border); margin: 12px 0 0; padding-top: 12px;">
+                    <button id="btn-reset-system" class="ctrl-btn" style="width: 100%; justify-content: center; display: flex; align-items: center; gap: 8px; background: rgba(239, 68, 68, 0.1); border-color: rgba(239, 68, 68, 0.2); color: var(--danger); font-weight: 500;">
+                      <svg class="icon" viewBox="0 0 24 24"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 11-.57-8.38l5.67-5.67"/></svg>
+                      Reset System State
+                    </button>
+                  </div>
+                  <span class="note">Session-only settings (refresh resets).</span>
+                </div>
+              </div>
             </div>
           </div>
           <p>Watch the visualization below after sending a request. Real logs are in your terminal.</p>
+
+          <details style="margin: 0 0 16px; border: 1px solid var(--border); border-radius: 12px; padding: 14px; background: rgba(0,0,0,0.22);">
+            <summary style="cursor: pointer; font-weight: 600; color: #fff; font-family: 'Outfit', sans-serif;">Exercises (try these in class)</summary>
+            <div class="exercise-checklist">
+              <label class="exercise-item">
+                <input type="checkbox" class="exercise-check" data-exercise="1">
+                <div class="exercise-content">
+                  <strong>Catch-up demo:</strong>
+                  <span>Stop <code>notification-service</code>, send a checkout, then start it again and observe queued messages.</span>
+                </div>
+              </label>
+              <label class="exercise-item">
+                <input type="checkbox" class="exercise-check" data-exercise="2">
+                <div class="exercise-content">
+                  <strong>Modularity demo:</strong>
+                  <span>Stop <code>analytics-service</code>, send a checkout, then start it again (checkout still works).</span>
+                </div>
+              </label>
+              <label class="exercise-item">
+                <input type="checkbox" class="exercise-check" data-exercise="3">
+                <div class="exercise-content">
+                  <strong>Trace one story:</strong>
+                  <span>Copy the <code>correlationId</code> and follow it across logs in multiple services.</span>
+                </div>
+              </label>
+              <label class="exercise-item">
+                <input type="checkbox" class="exercise-check" data-exercise="4">
+                <div class="exercise-content">
+                  <strong>Predict routing:</strong>
+                  <span>Which queues should receive <code>payment.failed</code> and why?</span>
+                </div>
+              </label>
+              <label class="exercise-item">
+                <input type="checkbox" class="exercise-check" data-exercise="5">
+                <div class="exercise-content">
+                  <strong>Consistency discussion:</strong>
+                  <span>In payment failure, why can <code>order.cancelled</code> appear before <code>inventory.released</code>?</span>
+                </div>
+              </label>
+            </div>
+          </details>
           
           <div class="diagram-box">
 <span class="highlight">Client</span> 
@@ -526,6 +1275,55 @@
 <span class="analytics-highlight">↳ Analytics Service</span> (Global Observer: listens to all events via '#')
           </div>
 
+          <div id="routing-explainer" style="display: none; margin-bottom: 24px;">
+            <div style="font-family: 'Outfit', sans-serif; font-weight: 600; color: #fff; margin-bottom: 4px; font-size: 1.05rem;">Routing & Inboxes (Example)</div>
+            <div style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 12px;">
+              RabbitMQ routes one published event to multiple service inboxes based on the routing key binding.
+            </div>
+            
+            <div class="diagram-routing">
+              <!-- Exchange Node -->
+              <div class="diagram-node exchange-node">
+                <span class="node-type">EXCHANGE</span>
+                <span class="node-name">ecommerce_events</span>
+              </div>
+              
+              <!-- Connection Channel -->
+              <div class="diagram-connector">
+                <div class="routing-key-tag">Key: <code>payment.failed</code></div>
+                <div class="arrow-flow">
+                  <svg class="flow-svg" viewBox="0 0 160 80" preserveAspectRatio="none">
+                    <defs>
+                      <linearGradient id="flow-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" stop-color="var(--primary)" stop-opacity="0.8" />
+                        <stop offset="100%" stop-color="#a855f7" stop-opacity="0.8" />
+                      </linearGradient>
+                    </defs>
+                    <path class="flow-dash" d="M 0 40 Q 80 0 160 15" fill="none" stroke="url(#flow-grad)" stroke-width="2" />
+                    <path class="flow-dash" d="M 0 40 L 160 40" fill="none" stroke="url(#flow-grad)" stroke-width="2" />
+                    <path class="flow-dash" d="M 0 40 Q 80 80 160 65" fill="none" stroke="url(#flow-grad)" stroke-width="2" />
+                  </svg>
+                </div>
+              </div>
+              
+              <!-- Queue Nodes -->
+              <div class="diagram-queues">
+                <div class="diagram-node queue-node">
+                  <span class="node-type">QUEUE</span>
+                  <span class="node-name" style="font-size: 0.72rem;">notification_service_events_queue</span>
+                </div>
+                <div class="diagram-node queue-node">
+                  <span class="node-type">QUEUE</span>
+                  <span class="node-name" style="font-size: 0.72rem;">order_service_checkout_failed_queue</span>
+                </div>
+                <div class="diagram-node queue-node">
+                  <span class="node-type">QUEUE</span>
+                  <span class="node-name" style="font-size: 0.72rem;">analytics_service_events_queue</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <div class="timeline-wrapper">
             <!-- Main Timeline Sequence -->
             <div id="timeline-container" class="timeline">
@@ -534,21 +1332,100 @@
               </div>
             </div>
 
-            <!-- Global Observer Panel -->
-            <div id="global-observers-panel" class="global-observers">
-              <div class="observer-title">
-                <svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
-                Analytics Service
-              </div>
-              <div class="observer-body">
-                Quietly listening to <strong>all</strong> events on the notice board without disrupting the flow.
-                <div style="margin-top: 8px; display: flex; align-items: center; gap: 6px;">
-                  <span id="analytics-pulse" class="pulse-indicator"></span> 
-                  <span id="analytics-status">Waiting...</span>
+            <div class="sidebar-stack">
+              <!-- State Panel -->
+              <div id="state-panel" class="state-panel">
+                <div class="state-title">
+                  <span>Scenario State</span>
+                  <span class="pill" id="state-mode-pill"><strong>Live</strong> state</span>
+                </div>
+                <div class="state-subtitle">
+                  Helps explain consistency. Live state reads in-memory data (no DB). If live is off/unavailable, values are illustrative.
+                </div>
+
+                <label class="toggle">
+                  <input id="toggle-live-state" type="checkbox" checked>
+                  Live state (read-only)
+                </label>
+
+                <div class="state-grid" style="margin-top: 14px; display: grid; gap: 12px;">
+                  <!-- Order Card -->
+                  <div class="state-card">
+                    <div class="card-head">
+                      <h4>
+                        <svg class="icon" viewBox="0 0 24 24" style="color: var(--primary);"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                        Order Lifecycle
+                      </h4>
+                      <span class="order-id-badge" id="state-order-id">-</span>
+                    </div>
+                    
+                    <div class="order-flow-visual">
+                      <div class="flow-step" id="step-created">
+                        <span class="step-dot"></span>
+                        <span class="step-label">Created</span>
+                      </div>
+                      <div class="flow-arrow">──►</div>
+                      <div class="flow-step" id="step-outcome">
+                        <span class="step-dot"></span>
+                        <span class="step-label" id="step-outcome-label">Outcome</span>
+                      </div>
+                    </div>
+                    
+                    <div class="state-meta-row">
+                      <span>Status: <strong id="state-order-status" style="font-family: inherit; font-size: inherit; text-transform: uppercase;">-</strong></span>
+                      <span>Updated: <strong id="state-order-updated">-</strong></span>
+                    </div>
+                  </div>
+
+                  <!-- Inventory Card -->
+                  <div class="state-card">
+                    <div class="card-head">
+                      <h4>
+                        <svg class="icon" viewBox="0 0 24 24" style="color: var(--success);"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg>
+                        Inventory Balance
+                      </h4>
+                      <span class="product-badge" id="state-product-id">-</span>
+                    </div>
+
+                    <div class="inventory-flow-visual">
+                      <div class="stock-box">
+                        <span class="box-label">STARTING</span>
+                        <span class="box-val" id="state-product-stock-before">-</span>
+                      </div>
+                      <div class="flow-delta-arrow" id="state-product-delta-container">
+                        <span class="arrow-line"></span>
+                        <span class="delta-pill" id="state-product-delta">-</span>
+                      </div>
+                      <div class="stock-box">
+                        <span class="box-label">CURRENT</span>
+                        <span class="box-val" id="state-product-stock-after">-</span>
+                      </div>
+                    </div>
+
+                    <div class="state-meta-row">
+                      <span>Product Stock Balance</span>
+                      <span>Updated: <strong id="state-stock-updated">-</strong></span>
+                    </div>
+                  </div>
                 </div>
               </div>
-              <div id="analytics-log-container" class="analytics-log-container" style="display: none;">
-                <!-- Logs will be appended here -->
+
+              <!-- Global Observer Panel -->
+              <div id="global-observers-panel" class="global-observers">
+                <div class="observer-title">
+                  <svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+                  Analytics Service
+                </div>
+                <div class="observer-body">
+                  Quietly listening to <strong>all</strong> events on the notice board without disrupting the flow.
+                  <div style="margin-top: 8px; display: flex; align-items: center; gap: 6px;">
+                    <span id="analytics-pulse" class="pulse-indicator"></span> 
+                    <span id="analytics-status">Waiting...</span>
+                  </div>
+                </div>
+                <div id="analytics-log-container" class="analytics-log-container" style="display: none;">
+                  <!-- Logs will be appended here -->
+                </div>
               </div>
             </div>
           </div>
@@ -632,16 +1509,41 @@
                 <svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>
               </button>
               <div class="accordion-content">
-                <ul class="explorer-list">
-                  <li><strong>Port:</strong> 3000</li>
-                  <li><strong>Style:</strong> HTTP</li>
-                  <li><strong>Main job:</strong> Receives browser/curl checkout requests</li>
-                  <li><strong>Endpoint:</strong> POST /checkout</li>
-                  <li><strong>Publishes events:</strong> none</li>
-                  <li><strong>Consumes events:</strong> none</li>
-                  <li><strong>Calls:</strong> Order Service over HTTP</li>
-                  <li><strong>Notice:</strong> This is the only entry point clients talk to.</li>
-                </ul>
+                <div class="service-metadata">
+                  <span class="meta-badge"><strong>Port:</strong> <code>3000</code></span>
+                  <span class="meta-badge"><strong>Style:</strong> HTTP Entry</span>
+                  <span class="meta-badge"><strong>Endpoint:</strong> <code>POST /checkout</code></span>
+                  <span class="meta-badge"><strong>Calls:</strong> Order Service (HTTP)</span>
+                </div>
+                <div class="explorer-grid">
+                  <div class="explorer-card card-owns">
+                    <div class="explorer-card-header">
+                      <svg class="icon" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                      Owns
+                    </div>
+                    <div class="explorer-card-body">
+                      System boundary validation, API endpoint definitions, and synchronous client response handling. Generates early correlation IDs.
+                    </div>
+                  </div>
+                  <div class="explorer-card card-does-not-own">
+                    <div class="explorer-card-header">
+                      <svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/></svg>
+                      Does NOT own
+                    </div>
+                    <div class="explorer-card-body">
+                      Orders database state, stock counts, credit validations, or notification distribution logs.
+                    </div>
+                  </div>
+                  <div class="explorer-card card-why">
+                    <div class="explorer-card-header">
+                      <svg class="icon" viewBox="0 0 24 24"><path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
+                      Why this exists
+                    </div>
+                    <div class="explorer-card-body">
+                      Web clients need a clean, synchronous HTTP entry point. The Gateway maps this standard HTTP input into event-driven background flows.
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -654,17 +1556,44 @@
                 <svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>
               </button>
               <div class="accordion-content">
-                <ul class="explorer-list">
-                  <li><strong>Port:</strong> 3001</li>
-                  <li><strong>Style:</strong> HTTP + RabbitMQ Producer + Consumer</li>
-                  <li><strong>Main job:</strong> Creates and cancels in-memory orders</li>
-                  <li><strong>Endpoint:</strong> POST /orders</li>
-                  <li><strong>Publishes:</strong> <code>order.created</code>, <code>order.cancelled</code></li>
-                  <li><strong>Consumes:</strong> <code>inventory.failed</code>, <code>payment.failed</code></li>
-                  <li><strong>Queue (Inbox):</strong> <code>order_service_checkout_failed_queue</code></li>
-                  <li><strong>Analogy:</strong> Posts order notes and cancels orders when checkout cannot finish.</li>
-                  <li><strong>Notice:</strong> It does NOT import or call Inventory Service directly.</li>
-                </ul>
+                <div class="service-metadata">
+                  <span class="meta-badge"><strong>Port:</strong> <code>3001</code></span>
+                  <span class="meta-badge"><strong>Style:</strong> HTTP + RabbitMQ Topic Producer & Consumer</span>
+                  <span class="meta-badge"><strong>Publishes:</strong> <code>order.created</code>, <code>order.cancelled</code></span>
+                  <span class="meta-badge"><strong>Consumes:</strong> <code>inventory.failed</code>, <code>payment.failed</code></span>
+                </div>
+                <div class="explorer-grid">
+                  <div class="explorer-card card-owns">
+                    <div class="explorer-card-header">
+                      <svg class="icon" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                      Owns
+                    </div>
+                    <div class="explorer-card-body">
+                      The core order database records and their corresponding lifecycles (created, pending, cancelled, or completed).
+                    </div>
+                  </div>
+                  <div class="explorer-card card-does-not-own">
+                    <div class="explorer-card-header">
+                      <svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/></svg>
+                      Does NOT own
+                    </div>
+                    <div class="explorer-card-body">
+                      Inventory quantities, catalog availability, or transaction charging operations.
+                    </div>
+                  </div>
+                  <div class="explorer-card card-why">
+                    <div class="explorer-card-header">
+                      <svg class="icon" viewBox="0 0 24 24"><path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
+                      Why these events?
+                    </div>
+                    <div class="explorer-card-body">
+                      <ul>
+                        <li><code>order.created</code>: Announces the booking intent.</li>
+                        <li><code>order.cancelled</code>: Cancels the booking to trigger compensations when issues occur downstream.</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -677,15 +1606,45 @@
                 <svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>
               </button>
               <div class="accordion-content">
-                <ul class="explorer-list">
-                  <li><strong>Port:</strong> 3002</li>
-                  <li><strong>Style:</strong> Consumer + Producer</li>
-                  <li><strong>Main job:</strong> Checks and reserves stock</li>
-                  <li><strong>Publishes:</strong> <code>inventory.reserved</code>, <code>inventory.failed</code>, <code>inventory.released</code></li>
-                  <li><strong>Consumes:</strong> <code>order.created</code>, <code>inventory.release_requested</code></li>
-                  <li><strong>Queues (Inbox):</strong> <code>inventory_service_order_created_queue</code>, <code>inventory_service_release_requested_queue</code></li>
-                  <li><strong>Notice:</strong> Only Inventory Service changes stock, including compensation after payment failure.</li>
-                </ul>
+                <div class="service-metadata">
+                  <span class="meta-badge"><strong>Port:</strong> <code>3002</code></span>
+                  <span class="meta-badge"><strong>Style:</strong> RabbitMQ Topic Consumer + Producer</span>
+                  <span class="meta-badge"><strong>Publishes:</strong> <code>inventory.reserved</code>, <code>inventory.failed</code>, <code>inventory.released</code></span>
+                  <span class="meta-badge"><strong>Consumes:</strong> <code>order.created</code>, <code>inventory.release_requested</code></span>
+                </div>
+                <div class="explorer-grid">
+                  <div class="explorer-card card-owns">
+                    <div class="explorer-card-header">
+                      <svg class="icon" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                      Owns
+                    </div>
+                    <div class="explorer-card-body">
+                      The catalog counts and physical stock reservations in memory.
+                    </div>
+                  </div>
+                  <div class="explorer-card card-does-not-own">
+                    <div class="explorer-card-header">
+                      <svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/></svg>
+                      Does NOT own
+                    </div>
+                    <div class="explorer-card-body">
+                      Customer checkout records, transactional flows, or payment confirmations.
+                    </div>
+                  </div>
+                  <div class="explorer-card card-why">
+                    <div class="explorer-card-header">
+                      <svg class="icon" viewBox="0 0 24 24"><path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
+                      Why these events?
+                    </div>
+                    <div class="explorer-card-body">
+                      <ul>
+                        <li><code>inventory.reserved</code>: Locks stock for payment validation.</li>
+                        <li><code>inventory.failed</code>: Rejects booking due to zero stock.</li>
+                        <li><code>inventory.released</code>: Restores stock after payment fails (compensation).</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -698,15 +1657,45 @@
                 <svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>
               </button>
               <div class="accordion-content">
-                <ul class="explorer-list">
-                  <li><strong>Port:</strong> 3003</li>
-                  <li><strong>Style:</strong> Consumer + Producer</li>
-                  <li><strong>Main job:</strong> Simulates payment</li>
-                  <li><strong>Publishes:</strong> <code>payment.completed</code>, <code>payment.failed</code>, <code>inventory.release_requested</code></li>
-                  <li><strong>Consumes:</strong> <code>inventory.reserved</code></li>
-                  <li><strong>Queue (Inbox):</strong> <code>payment_service_inventory_reserved_queue</code></li>
-                  <li><strong>Notice:</strong> Payment requests stock release; it does not restore inventory itself.</li>
-                </ul>
+                <div class="service-metadata">
+                  <span class="meta-badge"><strong>Port:</strong> <code>3003</code></span>
+                  <span class="meta-badge"><strong>Style:</strong> RabbitMQ Topic Consumer + Producer</span>
+                  <span class="meta-badge"><strong>Publishes:</strong> <code>payment.completed</code>, <code>payment.failed</code>, <code>inventory.release_requested</code></span>
+                  <span class="meta-badge"><strong>Consumes:</strong> <code>inventory.reserved</code></span>
+                </div>
+                <div class="explorer-grid">
+                  <div class="explorer-card card-owns">
+                    <div class="explorer-card-header">
+                      <svg class="icon" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                      Owns
+                    </div>
+                    <div class="explorer-card-body">
+                      Payment processing logic, merchant authorization states, and simulated card results.
+                    </div>
+                  </div>
+                  <div class="explorer-card card-does-not-own">
+                    <div class="explorer-card-header">
+                      <svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/></svg>
+                      Does NOT own
+                    </div>
+                    <div class="explorer-card-body">
+                      Product catalogue details, item inventory counts, or client message channels.
+                    </div>
+                  </div>
+                  <div class="explorer-card card-why">
+                    <div class="explorer-card-header">
+                      <svg class="icon" viewBox="0 0 24 24"><path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
+                      Why these events?
+                    </div>
+                    <div class="explorer-card-body">
+                      <ul>
+                        <li><code>payment.completed</code>: Notifies order checkout is successful.</li>
+                        <li><code>payment.failed</code>: Reports card declined exceptions.</li>
+                        <li><code>inventory.release_requested</code>: Requests compensation stock restore since payment failed.</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -719,14 +1708,40 @@
                 <svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>
               </button>
               <div class="accordion-content">
-                <ul class="explorer-list">
-                  <li><strong>Port:</strong> 3004</li>
-                  <li><strong>Style:</strong> Consumer Only</li>
-                  <li><strong>Main job:</strong> Prints customer notifications</li>
-                  <li><strong>Consumes:</strong> <code>payment.completed</code>, <code>payment.failed</code>, <code>inventory.failed</code></li>
-                  <li><strong>Queue (Inbox):</strong> <code>notification_service_events_queue</code></li>
-                  <li><strong>Notice:</strong> One queue can subscribe to MULTIPLE routing keys.</li>
-                </ul>
+                <div class="service-metadata">
+                  <span class="meta-badge"><strong>Port:</strong> <code>3004</code></span>
+                  <span class="meta-badge"><strong>Style:</strong> RabbitMQ Topic Consumer Only</span>
+                  <span class="meta-badge"><strong>Consumes:</strong> <code>payment.completed</code>, <code>payment.failed</code>, <code>inventory.failed</code></span>
+                </div>
+                <div class="explorer-grid">
+                  <div class="explorer-card card-owns">
+                    <div class="explorer-card-header">
+                      <svg class="icon" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                      Owns
+                    </div>
+                    <div class="explorer-card-body">
+                      Receipt distribution logs, text alerts, and email notifications (customer messages).
+                    </div>
+                  </div>
+                  <div class="explorer-card card-does-not-own">
+                    <div class="explorer-card-header">
+                      <svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/></svg>
+                      Does NOT own
+                    </div>
+                    <div class="explorer-card-body">
+                      System booking updates, credit transactions, or database inventory balances.
+                    </div>
+                  </div>
+                  <div class="explorer-card card-why">
+                    <div class="explorer-card-header">
+                      <svg class="icon" viewBox="0 0 24 24"><path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
+                      Why this exists
+                    </div>
+                    <div class="explorer-card-body">
+                      Purely listens to final transaction endpoints to keep customers updated without slowing down order processing.
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -739,14 +1754,40 @@
                 <svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>
               </button>
               <div class="accordion-content">
-                <ul class="explorer-list">
-                  <li><strong>Port:</strong> 3005 (or similar)</li>
-                  <li><strong>Style:</strong> Global Consumer</li>
-                  <li><strong>Main job:</strong> Follows and logs every event in the project</li>
-                  <li><strong>Consumes:</strong> <code>#</code> (RabbitMQ wildcard for all events)</li>
-                  <li><strong>Queue (Inbox):</strong> <code>analytics_service_events_queue</code></li>
-                  <li><strong>Notice:</strong> Perfect example of the "Wiretap" or "Fan-out" pattern. It collects data completely silently without breaking the main flow.</li>
-                </ul>
+                <div class="service-metadata">
+                  <span class="meta-badge"><strong>Port:</strong> <code>3005</code></span>
+                  <span class="meta-badge"><strong>Style:</strong> RabbitMQ Global Consumer (Wiretap)</span>
+                  <span class="meta-badge"><strong>Consumes:</strong> <code>#</code> (All events wild card)</span>
+                </div>
+                <div class="explorer-grid">
+                  <div class="explorer-card card-owns">
+                    <div class="explorer-card-header">
+                      <svg class="icon" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                      Owns
+                    </div>
+                    <div class="explorer-card-body">
+                      System-wide performance monitoring metrics, transaction trends, and event logging.
+                    </div>
+                  </div>
+                  <div class="explorer-card card-does-not-own">
+                    <div class="explorer-card-header">
+                      <svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/></svg>
+                      Does NOT own
+                    </div>
+                    <div class="explorer-card-body">
+                      Transaction execution paths, stock deductions, or client invoicing records.
+                    </div>
+                  </div>
+                  <div class="explorer-card card-why">
+                    <div class="explorer-card-header">
+                      <svg class="icon" viewBox="0 0 24 24"><path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
+                      Why this exists
+                    </div>
+                    <div class="explorer-card-body">
+                      Demonstrates adding a global monitoring system using topic routing wildcards without requiring code changes in publishers.
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -759,12 +1800,31 @@
                 <svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>
               </button>
               <div class="accordion-content">
-                <ul class="explorer-list">
-                  <li><strong>Ports:</strong> 5672 (AMQP), 15672 (UI)</li>
-                  <li><strong>Main job:</strong> Message Broker / Notice Board</li>
-                  <li><strong>Exchange:</strong> <code>ecommerce_events</code></li>
-                  <li><strong>Notice:</strong> RabbitMQ decouples services completely.</li>
-                </ul>
+                <div class="service-metadata">
+                  <span class="meta-badge"><strong>AMQP Port:</strong> <code>5672</code></span>
+                  <span class="meta-badge"><strong>Management Port:</strong> <code>15672</code></span>
+                  <span class="meta-badge"><strong>Exchange:</strong> <code>ecommerce_events</code></span>
+                </div>
+                <div class="explorer-grid">
+                  <div class="explorer-card card-owns" style="grid-column: span 2;">
+                    <div class="explorer-card-header">
+                      <svg class="icon" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                      Main Role
+                    </div>
+                    <div class="explorer-card-body">
+                      Decouples microservices. Receives events from publishers and routes copies to queues according to configured binding patterns.
+                    </div>
+                  </div>
+                  <div class="explorer-card card-why">
+                    <div class="explorer-card-header">
+                      <svg class="icon" viewBox="0 0 24 24"><path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
+                      Why topic routing?
+                    </div>
+                    <div class="explorer-card-body">
+                      Enables precise point-to-point routing, event stream splitting, and global auditing wiretaps within a single centralized broker.
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -794,7 +1854,22 @@
       const analyticsPanel = document.getElementById('global-observers-panel');
       const analyticsPulse = document.getElementById('analytics-pulse');
       const analyticsStatus = document.getElementById('analytics-status');
-      
+      const asyncNoteEl = document.getElementById('async-note');
+
+      // Classroom toggles (session-only)
+      const togglePresentationEl = document.getElementById('toggle-presentation');
+      const toggleReduceAnimationsEl = document.getElementById('toggle-reduce-animations');
+      const toggleExpandTechEl = document.getElementById('toggle-expand-tech');
+
+      // State panel elements
+      const toggleLiveStateEl = document.getElementById('toggle-live-state');
+      const stateModePillEl = document.getElementById('state-mode-pill');
+      const stateOrderIdEl = document.getElementById('state-order-id');
+      const stateOrderStatusEl = document.getElementById('state-order-status');
+      const stateOrderUpdatedEl = document.getElementById('state-order-updated');
+      const stateProductIdEl = document.getElementById('state-product-id');
+      const stateProductDeltaEl = document.getElementById('state-product-delta');
+      const stateStockUpdatedEl = document.getElementById('state-stock-updated');
 
       const btnBeginner = document.getElementById('btn-beginner');
       const btnTechnical = document.getElementById('btn-technical');
@@ -802,6 +1877,110 @@
       let currentView = 'beginner'; 
       let currentCorrelationId = 'corr_XXXX';
       const DEMO_DELAY_MS = 1200;
+      let lastOrderId = null;
+      let lastInventoryStock = null;
+      let liveStartingStock = null;
+
+      // Classroom Settings Popover Toggle
+      const settingsBtn = document.getElementById('settings-btn');
+      const settingsPopover = document.getElementById('settings-popover');
+      
+      if (settingsBtn && settingsPopover) {
+        settingsBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const isActive = settingsPopover.classList.toggle('active');
+          settingsBtn.classList.toggle('active', isActive);
+        });
+
+        document.addEventListener('click', (e) => {
+          if (!settingsPopover.contains(e.target) && e.target !== settingsBtn) {
+            settingsPopover.classList.remove('active');
+            settingsBtn.classList.remove('active');
+          }
+        });
+      }
+
+      // Collapsible eventual consistency alert
+      const btnWhyAsync = document.getElementById('btn-why-async');
+      const asyncNoteDetails = document.getElementById('async-note-details');
+      if (btnWhyAsync && asyncNoteDetails) {
+        btnWhyAsync.addEventListener('click', (e) => {
+          e.preventDefault();
+          const isHidden = asyncNoteDetails.style.display === 'none' || asyncNoteDetails.style.display === '';
+          asyncNoteDetails.style.display = isHidden ? 'block' : 'none';
+          btnWhyAsync.textContent = isHidden ? 'Hide details' : 'How is this possible?';
+        });
+      }
+
+      // Classroom Interactive Exercises Checklist
+      document.querySelectorAll('.exercise-check').forEach(check => {
+        // Load existing state from session storage
+        const key = `exercise-${check.dataset.exercise}`;
+        const isChecked = sessionStorage.getItem(key) === 'true';
+        check.checked = isChecked;
+        check.closest('.exercise-item').classList.toggle('checked', isChecked);
+
+        check.addEventListener('change', () => {
+          const checked = check.checked;
+          sessionStorage.setItem(key, checked);
+          check.closest('.exercise-item').classList.toggle('checked', checked);
+        });
+      });
+
+      // Reset System State Frontend Fetch Action
+      const btnResetSystem = document.getElementById('btn-reset-system');
+      if (btnResetSystem) {
+        btnResetSystem.addEventListener('click', async () => {
+          if (!confirm('Are you sure you want to reset all classroom stocks and orders back to defaults?')) {
+            return;
+          }
+          
+          btnResetSystem.disabled = true;
+          btnResetSystem.textContent = 'Resetting...';
+          
+          try {
+            const res = await fetch('/_teacher/reset', { method: 'POST' });
+            const data = await res.json();
+            alert(data.message || 'System state has been reset successfully!');
+            
+            // Clear current logs and reset panels
+            timelineContainer.innerHTML = '<div style="text-align: center; color: var(--text-muted); padding: 60px 0; font-style: italic;">Hit "Send Request" to trace the flow...</div>';
+            analyticsPanel.classList.remove('active');
+            analyticsLogContainer.innerHTML = '';
+            analyticsLogContainer.style.display = 'none';
+            asyncNoteEl.style.display = 'none';
+            resetStatePanel();
+            
+            // Fetch live stock to update panels immediately
+            if (toggleLiveStateEl.checked) {
+              try {
+                const productId = productIdEl.value;
+                await refreshLiveState(productId, null);
+              } catch (e) {
+                // ignore
+              }
+            }
+          } catch (err) {
+            alert('Failed to reset system: ' + err.message);
+          } finally {
+            btnResetSystem.disabled = false;
+            btnResetSystem.innerHTML = `<svg class="icon" viewBox="0 0 24 24"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 11-.57-8.38l5.67-5.67"/></svg> Reset System State`;
+            settingsPopover.classList.remove('active');
+            settingsBtn.classList.remove('active');
+          }
+        });
+      }
+
+      function applyClassroomToggles() {
+        document.body.classList.toggle('presentation-mode', Boolean(togglePresentationEl.checked));
+        document.body.classList.toggle('reduce-animations', Boolean(toggleReduceAnimationsEl.checked));
+        document.body.classList.toggle('expand-tech', Boolean(toggleExpandTechEl.checked));
+      }
+
+      togglePresentationEl.addEventListener('change', applyClassroomToggles);
+      toggleReduceAnimationsEl.addEventListener('change', applyClassroomToggles);
+      toggleExpandTechEl.addEventListener('change', applyClassroomToggles);
+      applyClassroomToggles();
 
       // Tab Logic
       document.querySelectorAll('.tab-btn').forEach(btn => {
@@ -839,7 +2018,7 @@
           { service: "API Gateway", action: "Received HTTP Request", isSuccess: true, beginnerExp: "Takes the request.", beginnerAnalogy: "Customer talks to front desk.", technicalExp: "Receives POST /checkout.", technicalDetails: { type: "HTTP POST" } },
           { service: "Order Service", action: "Created Order", event: "order.created", isSuccess: true, beginnerExp: "Creates order.", beginnerAnalogy: "Posts 'order.created' note.", technicalExp: "Publishes event.", technicalDetails: { routingKey: "order.created" } },
           { service: "Inventory Service", action: "Stock Failed", event: "inventory.failed", isError: true, beginnerExp: "Sees item is out of stock.", beginnerAnalogy: "Checks shelf, posts 'inventory.failed'.", technicalExp: "Consumes order.created, publishes fail.", technicalDetails: { queue: "inventory_service_...", routingKey: "inventory.failed" } },
-          { service: "Order Service", action: "Cancelled Order", event: "order.cancelled", isError: true, beginnerExp: "Marks the order cancelled because checkout cannot finish.", beginnerAnalogy: "Reads fail note and posts 'order.cancelled'.", technicalExp: "Consumes inventory.failed, publishes order.cancelled.", technicalDetails: { queue: "order_service_checkout_failed_queue", routingKey: "order.cancelled" } },
+          { service: "Order Service", action: "Cancelled Order", event: "order.cancelled", isError: true, beginnerExp: "Marks the order cancelled because checkout cannot finish.", beginnerAnalogy: "Reads fail note and posts 'order.cancelled'.", because: "Checkout cannot finish when inventory is out of stock.", technicalExp: "Consumes inventory.failed, publishes order.cancelled.", technicalDetails: { queue: "order_service_checkout_failed_queue", routingKey: "order.cancelled" } },
           { service: "Notification Service", action: "Out-of-Stock Message", isError: true, beginnerExp: "Tells customer out of stock.", beginnerAnalogy: "Reads fail note, apologizes.", technicalExp: "Consumes inventory.failed, logs message.", technicalDetails: { queue: "notification_service_..." } }
         ],
         paymentFailure: [
@@ -848,14 +2027,210 @@
           { service: "Inventory Service", action: "Reserved Inventory", event: "inventory.reserved", isSuccess: true, beginnerExp: "Checks stock.", beginnerAnalogy: "Posts reserved note.", technicalExp: "Publishes reserved.", technicalDetails: { routingKey: "inventory.reserved" } },
           { service: "Payment Service", action: "Payment Failed", event: "payment.failed", isError: true, beginnerExp: "Card declined.", beginnerAnalogy: "Posts 'payment.failed'.", technicalExp: "Publishes failed.", technicalDetails: { routingKey: "payment.failed" } },
           { service: "Notification Service", action: "Failure Message", isError: true, beginnerExp: "Tells customer payment failed.", beginnerAnalogy: "Reads fail note, apologizes.", technicalExp: "Logs failure.", technicalDetails: { queue: "notification_service_..." } },
-          { service: "Order Service", action: "Cancelled Order", event: "order.cancelled", isError: true, beginnerExp: "Marks the order cancelled after payment fails.", beginnerAnalogy: "Reads payment.failed and posts order.cancelled.", technicalExp: "Consumes payment.failed, publishes order.cancelled.", technicalDetails: { routingKey: "order.cancelled" } },
-          { service: "Payment Service", action: "Requested Stock Release", event: "inventory.release_requested", isError: true, beginnerExp: "Asks Inventory to undo the reservation.", beginnerAnalogy: "Posts a compensation note instead of changing stock directly.", technicalExp: "Publishes inventory.release_requested after payment.failed.", technicalDetails: { routingKey: "inventory.release_requested" } },
-          { service: "Inventory Service", action: "Released Inventory", event: "inventory.released", isSuccess: true, beginnerExp: "Adds stock back so inventory matches reality.", beginnerAnalogy: "Reads release note and posts inventory.released.", technicalExp: "Consumes release_requested, publishes inventory.released.", technicalDetails: { queue: "inventory_service_release_requested_queue", routingKey: "inventory.released" } }
+          { service: "Order Service", action: "Cancelled Order", event: "order.cancelled", isError: true, beginnerExp: "Marks the order cancelled after payment fails.", beginnerAnalogy: "Reads payment.failed and posts order.cancelled.", because: "Checkout cannot finish after payment failed.", technicalExp: "Consumes payment.failed, publishes order.cancelled.", technicalDetails: { routingKey: "order.cancelled" } },
+          { service: "Payment Service", action: "Requested Stock Release", event: "inventory.release_requested", isError: true, beginnerExp: "Asks Inventory to undo the reservation.", beginnerAnalogy: "Posts a compensation note instead of changing stock directly.", because: "Payment failed after inventory was reserved, and Payment does not own stock.", technicalExp: "Publishes inventory.release_requested after payment.failed.", technicalDetails: { routingKey: "inventory.release_requested" } },
+          { service: "Inventory Service", action: "Released Inventory", event: "inventory.released", isSuccess: true, beginnerExp: "Adds stock back so inventory matches reality.", beginnerAnalogy: "Reads release note and posts inventory.released.", because: "Inventory owns stock, including compensation steps.", technicalExp: "Consumes release_requested, publishes inventory.released.", technicalDetails: { queue: "inventory_service_release_requested_queue", routingKey: "inventory.released" } }
         ],
         invalid: [
           { service: "API Gateway", action: "Rejected Request", isError: true, beginnerExp: "Checks request, missing data.", beginnerAnalogy: "Front desk rejects incomplete form.", technicalExp: "Validation fails, returns 400.", technicalDetails: { type: "HTTP Validation" } }
         ]
       };
+
+      function nowStamp() {
+        return new Date().toLocaleTimeString();
+      }
+
+      function setStateMode(mode) {
+        if (mode === 'live') {
+          stateModePillEl.innerHTML = "<strong>Live</strong> state";
+          return;
+        }
+        stateModePillEl.innerHTML = "<strong>Illustrative</strong> state";
+      }
+
+      function resetStatePanel() {
+        lastOrderId = null;
+        lastInventoryStock = null;
+        liveStartingStock = null;
+        stateOrderIdEl.textContent = "-";
+        stateOrderStatusEl.textContent = "-";
+        stateOrderUpdatedEl.textContent = "-";
+        stateProductIdEl.textContent = "-";
+        
+        const beforeEl = document.getElementById('state-product-stock-before');
+        const afterEl = document.getElementById('state-product-stock-after');
+        if (beforeEl) beforeEl.textContent = "-";
+        if (afterEl) afterEl.textContent = "-";
+        
+        stateProductDeltaEl.textContent = "-";
+        stateProductDeltaEl.className = "delta-pill";
+        stateStockUpdatedEl.textContent = "-";
+
+        const stepCreated = document.getElementById('step-created');
+        const stepOutcome = document.getElementById('step-outcome');
+        const stepOutcomeLabel = document.getElementById('step-outcome-label');
+        if (stepCreated) stepCreated.className = "flow-step";
+        if (stepOutcome) {
+          stepOutcome.className = "flow-step";
+          stepOutcomeLabel.textContent = "Outcome";
+        }
+      }
+
+      async function fetchStock(productId) {
+        const response = await fetch("/_teacher/stock");
+        if (!response.ok) {
+          throw new Error("stock_unavailable");
+        }
+        const body = await response.json();
+        const stockObj = body?.stock || {};
+        return Number(stockObj?.[productId] ?? 0);
+      }
+
+      async function fetchOrder(orderId) {
+        const response = await fetch(`/_teacher/orders/${encodeURIComponent(orderId)}`);
+        if (!response.ok) {
+          throw new Error("order_unavailable");
+        }
+        const body = await response.json();
+        return body?.order || null;
+      }
+
+      async function refreshLiveState(productId, orderId) {
+        const [stockValue, order] = await Promise.all([
+          fetchStock(productId),
+          orderId ? fetchOrder(orderId) : Promise.resolve(null),
+        ]);
+
+        stateProductIdEl.textContent = productId;
+        
+        const beforeEl = document.getElementById('state-product-stock-before');
+        const afterEl = document.getElementById('state-product-stock-after');
+        
+        // Starting stock (Before)
+        if (liveStartingStock !== null) {
+          beforeEl.textContent = String(liveStartingStock);
+        } else {
+          beforeEl.textContent = "-";
+        }
+
+        // Current stock (After)
+        afterEl.textContent = String(stockValue);
+        stateStockUpdatedEl.textContent = nowStamp();
+
+        // Calculate and render delta
+        if (liveStartingStock === null) {
+          stateProductDeltaEl.textContent = "-";
+          stateProductDeltaEl.className = "delta-pill";
+        } else {
+          const delta = stockValue - liveStartingStock;
+          stateProductDeltaEl.textContent = delta === 0 ? "0" : (delta > 0 ? `+${delta}` : `${delta}`);
+          stateProductDeltaEl.className = "delta-pill " + (delta === 0 ? "" : (delta > 0 ? "plus" : "minus"));
+        }
+
+        if (order) {
+          stateOrderIdEl.textContent = order.orderId || orderId;
+          const status = order.status || "-";
+          stateOrderStatusEl.textContent = status;
+          stateOrderUpdatedEl.textContent = nowStamp();
+
+          // Stepper highlight
+          const stepCreated = document.getElementById('step-created');
+          const stepOutcome = document.getElementById('step-outcome');
+          const stepOutcomeLabel = document.getElementById('step-outcome-label');
+
+          if (status === 'created') {
+            stepCreated.className = "flow-step active-blue";
+            stepOutcome.className = "flow-step";
+            stepOutcomeLabel.textContent = "Pending";
+          } else if (status === 'cancelled') {
+            stepCreated.className = "flow-step active-green";
+            stepOutcome.className = "flow-step active-red";
+            stepOutcomeLabel.textContent = "Cancelled";
+          } else if (status === 'completed' || status === 'success') {
+            stepCreated.className = "flow-step active-green";
+            stepOutcome.className = "flow-step active-green";
+            stepOutcomeLabel.textContent = "Completed";
+          } else {
+            stepCreated.className = "flow-step active-blue";
+            stepOutcome.className = "flow-step";
+            stepOutcomeLabel.textContent = status;
+          }
+        }
+      }
+
+      function applyIllustrativeStateForScenario(sType, payload, apiBody) {
+        setStateMode('illustrative');
+
+        const productId = payload.productId;
+        const quantity = payload.quantity;
+        const orderId = apiBody?.order?.orderId || "-";
+        
+        stateProductIdEl.textContent = productId;
+        stateOrderIdEl.textContent = orderId;
+        stateOrderUpdatedEl.textContent = nowStamp();
+        stateStockUpdatedEl.textContent = nowStamp();
+
+        // Default starting inventory based on demo constants
+        const baseStock = productId === 'pencil' ? 10 : (productId === 'notebook' ? 5 : 0);
+        
+        const beforeEl = document.getElementById('state-product-stock-before');
+        const afterEl = document.getElementById('state-product-stock-after');
+        
+        beforeEl.textContent = String(baseStock);
+
+        const stepCreated = document.getElementById('step-created');
+        const stepOutcome = document.getElementById('step-outcome');
+        const stepOutcomeLabel = document.getElementById('step-outcome-label');
+
+        if (sType === 'invalid') {
+          stateOrderStatusEl.textContent = "REJECTED";
+          afterEl.textContent = String(baseStock);
+          stateProductDeltaEl.textContent = "0";
+          stateProductDeltaEl.className = "delta-pill";
+          
+          stepCreated.className = "flow-step active-red";
+          stepOutcome.className = "flow-step";
+          stepOutcomeLabel.textContent = "Rejected";
+          return;
+        }
+
+        if (sType === 'success') {
+          stateOrderStatusEl.textContent = "CREATED";
+          const finalStock = Math.max(0, baseStock - quantity);
+          afterEl.textContent = String(finalStock);
+          stateProductDeltaEl.textContent = `-${quantity}`;
+          stateProductDeltaEl.className = "delta-pill minus";
+          
+          stepCreated.className = "flow-step active-green";
+          stepOutcome.className = "flow-step active-green";
+          stepOutcomeLabel.textContent = "Completed";
+          return;
+        }
+
+        if (sType === 'outOfStock') {
+          stateOrderStatusEl.textContent = "CANCELLED";
+          afterEl.textContent = String(baseStock);
+          stateProductDeltaEl.textContent = "0";
+          stateProductDeltaEl.className = "delta-pill";
+          
+          stepCreated.className = "flow-step active-green";
+          stepOutcome.className = "flow-step active-red";
+          stepOutcomeLabel.textContent = "Cancelled";
+          return;
+        }
+
+        if (sType === 'paymentFailure') {
+          // reserve then release -> ends at baseStock
+          stateOrderStatusEl.textContent = "CANCELLED";
+          afterEl.textContent = String(baseStock);
+          stateProductDeltaEl.textContent = "0";
+          stateProductDeltaEl.className = "delta-pill";
+          
+          stepCreated.className = "flow-step active-green";
+          stepOutcome.className = "flow-step active-red";
+          stepOutcomeLabel.textContent = "Cancelled";
+        }
+      }
 
       document.querySelectorAll(".scenario-btn").forEach((button) => {
         button.addEventListener("click", () => {
@@ -869,10 +2244,21 @@
         const borderClass = step.isError ? "error-path" : (step.isSuccess ? "success-path" : "");
         const eventTag = step.event ? `<div class="event-envelope"><svg class="icon" viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg> ${step.event}</div>` : '';
         
+        const becauseTag = step.because ? `
+          <div class="because-card">
+            <svg class="icon because-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>
+            <div class="because-content">
+              <span class="because-label">WHY THIS HAPPENS</span>
+              <span>${step.because}</span>
+            </div>
+          </div>
+        ` : '';
+        
         const beginnerHtml = `
           <div class="content-beginner" style="display: ${currentView === 'beginner' ? 'block' : 'none'};">
             <p style="color: var(--text-main); margin-bottom: 0;">${step.beginnerExp}</p>
             <div class="analogy-box">"${step.beginnerAnalogy}"</div>
+            ${becauseTag}
           </div>
         `;
         
@@ -884,6 +2270,7 @@
               <div><strong>CorrelationID:</strong> ${currentCorrelationId}</div>
               <ul>${techDetails}</ul>
             </div>
+            ${becauseTag}
           </div>
         `;
 
@@ -909,13 +2296,15 @@
         analyticsPulse.classList.remove('pulsing');
         void analyticsPulse.offsetWidth; 
         analyticsPulse.classList.add('pulsing');
-        analyticsStatus.innerHTML = `Received <strong style="color: #fff;">${eventName}</strong>`;
+        analyticsStatus.innerHTML = `Observed <strong style="color: #fff;">${eventName}</strong>`;
         
         // Append log to scrolling container
         analyticsLogContainer.style.display = 'flex';
         const logEntry = document.createElement('div');
         logEntry.className = 'log-entry';
-        logEntry.innerHTML = `> <span class="keyword">INSERT INTO</span> logs <span class="keyword">VALUES</span> (<span class="string">'${eventName}'</span>, <span class="string">'${currentCorrelationId}'</span>)`;
+        logEntry.style.borderLeft = '3px solid #a855f7';
+        logEntry.style.padding = '8px 12px';
+        logEntry.innerHTML = `<span style="color: var(--success); font-weight: 500;">[${nowStamp()}]</span> observed <span style="color: var(--warning); font-weight: 600;">${eventName}</span> <span style="color: var(--text-muted); font-size: 0.75rem;">(${currentCorrelationId})</span>`;
         
         analyticsLogContainer.appendChild(logEntry);
         
@@ -925,14 +2314,24 @@
 
       function toggleView(view) {
         currentView = view;
+        document.body.dataset.view = view;
         btnBeginner.classList.toggle('active', view === 'beginner');
         btnTechnical.classList.toggle('active', view === 'technical');
         document.querySelectorAll('.content-beginner').forEach(el => el.style.display = view === 'beginner' ? 'block' : 'none');
         document.querySelectorAll('.content-technical').forEach(el => el.style.display = view === 'technical' ? 'block' : 'none');
+        updateRoutingExplainerVisibility();
       }
 
       btnBeginner.addEventListener('click', () => toggleView('beginner'));
       btnTechnical.addEventListener('click', () => toggleView('technical'));
+
+      // Show routing explainer only in technical view
+      const routingExplainerEl = document.getElementById('routing-explainer');
+      function updateRoutingExplainerVisibility() {
+        routingExplainerEl.style.display = currentView === 'technical' ? 'block' : 'none';
+      }
+      document.body.dataset.view = currentView;
+      updateRoutingExplainerVisibility();
 
       form.addEventListener("submit", async (event) => {
         event.preventDefault();
@@ -950,6 +2349,17 @@
         analyticsPanel.classList.remove('active');
         analyticsLogContainer.innerHTML = '';
         analyticsLogContainer.style.display = 'none';
+        asyncNoteEl.style.display = 'none';
+        resetStatePanel();
+
+        // Fetch starting stock for before-after display
+        if (toggleLiveStateEl.checked) {
+          try {
+            liveStartingStock = await fetchStock(payload.productId);
+          } catch (e) {
+            liveStartingStock = null;
+          }
+        }
 
         try {
           const response = await fetch("/checkout", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
@@ -963,21 +2373,52 @@
           if (!response.ok) sType = 'invalid';
           else if (payload.productId === 'laptop') sType = 'outOfStock';
           else if (payload.userId === 'fail-payment') sType = 'paymentFailure';
+
+          if (sType === 'outOfStock' || sType === 'paymentFailure') {
+            asyncNoteEl.style.display = 'block';
+          }
           
           currentCorrelationId = body?.correlationId || 'corr_' + Math.random().toString(16).slice(2, 8);
           timelineContainer.innerHTML = '';
+          lastOrderId = body?.order?.orderId || null;
           
           const steps = scenariosData[sType];
+
+          // State panel: try live first (if enabled), else illustrative.
+          if (toggleLiveStateEl.checked && response.ok) {
+            try {
+              setStateMode('live');
+              await refreshLiveState(payload.productId, lastOrderId);
+            } catch (e) {
+              applyIllustrativeStateForScenario(sType, payload, body);
+            }
+          } else {
+            applyIllustrativeStateForScenario(sType, payload, body);
+          }
+
           for (let i = 0; i < steps.length; i++) {
             timelineContainer.insertAdjacentHTML('beforeend', buildTimelineCard(steps[i]));
             const card = timelineContainer.lastElementChild;
             
+            const delayMs = toggleReduceAnimationsEl.checked ? 0 : (i * DEMO_DELAY_MS);
             setTimeout(() => {
               card.classList.add('visible');
               if (steps[i].event) {
                 triggerAnalyticsPulse(steps[i].event);
               }
-            }, i * DEMO_DELAY_MS);
+            }, delayMs);
+          }
+
+          // State panel: refresh live state after timeline completes (to catch cancellation/compensation).
+          if (toggleLiveStateEl.checked && response.ok) {
+            setTimeout(async () => {
+              try {
+                setStateMode('live');
+                await refreshLiveState(payload.productId, lastOrderId);
+              } catch (e) {
+                // ignore
+              }
+            }, steps.length * DEMO_DELAY_MS + 250);
           }
         } catch (err) {
           statusEl.textContent = "Network error";

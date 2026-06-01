@@ -14,6 +14,7 @@ services:
     environment:
       - PORT=3000
       - ORDER_SERVICE_URL=http://order-service:3001
+      - INVENTORY_SERVICE_URL=http://inventory-service:3002
     depends_on:
       - order-service
 

@@ -3,6 +3,7 @@ const express = require("express");
 const app = express();
 const PORT = process.env.PORT || 3000;
 const ORDER_SERVICE_URL = process.env.ORDER_SERVICE_URL || "http://localhost:3001";
+const INVENTORY_SERVICE_URL = process.env.INVENTORY_SERVICE_URL || "http://inventory-service:3002";
 
 app.use(express.json());
 app.use(express.static("src/public"));
@@ -16,6 +17,56 @@ app.get("/health", (req, res) => {
     service: "api-gateway",
     status: "ok",
   });
+});
+
+app.get("/_teacher/stock", async (req, res) => {
+  try {
+    const response = await fetch(`${INVENTORY_SERVICE_URL}/stock`);
+    const body = await response.json();
+    res.status(response.status).json(body);
+  } catch (error) {
+    res.status(502).json({
+      message: "Inventory Service is unavailable",
+    });
+  }
+});
+
+app.get("/_teacher/orders/:orderId", async (req, res) => {
+  const { orderId } = req.params;
+
+  try {
+    const response = await fetch(`${ORDER_SERVICE_URL}/orders/${encodeURIComponent(orderId)}`);
+    const body = await response.json();
+    res.status(response.status).json(body);
+  } catch (error) {
+    res.status(502).json({
+      message: "Order Service is unavailable",
+    });
+  }
+});
+
+app.post("/_teacher/reset", async (req, res) => {
+  try {
+    const [invRes, ordRes] = await Promise.all([
+      fetch(`${INVENTORY_SERVICE_URL}/reset`, { method: "POST" }),
+      fetch(`${ORDER_SERVICE_URL}/reset`, { method: "POST" }),
+    ]);
+
+    if (invRes.ok && ordRes.ok) {
+      res.json({
+        message: "Classroom system state has been reset successfully",
+      });
+    } else {
+      res.status(502).json({
+        message: "Failed to reset some downstream services",
+      });
+    }
+  } catch (error) {
+    res.status(502).json({
+      message: "Reset failed: one or more services are unavailable",
+      error: error.message,
+    });
+  }
 });
 
 app.post("/checkout", async (req, res) => {

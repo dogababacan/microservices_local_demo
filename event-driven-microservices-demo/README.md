@@ -707,8 +707,21 @@ The Event Flow Timeline in the UI is a classroom visualization based on the sele
 
 For the **out-of-stock** and **payment failure** scenarios, the timeline includes extra steps such as `order.cancelled`, `inventory.release_requested`, and `inventory.released`. The **Analytics Service** panel beside the timeline animates as each scripted event appears (teaching visualization, not live broker tracing).
 
-For prepared scenarios, the UI uses the top-level `correlationId` from the API Gateway JSON response so students can search for the same ID in Docker Compose logs. For custom/manual input, the UI does not guess the async outcome; it tells students to check Docker logs and RabbitMQ UI.
+The UI also includes a **Scenario State** panel:
 
+- By default it uses **live read-only state** (still in-memory, no DB) to show current order status and inventory stock.
+- You can turn live state off to see an **illustrative** state panel.
+- This live/illustrative switch is useful for explaining consistency and compensation.
+
+The Timeline tab also includes classroom-friendly toggles:
+
+- **Presentation mode** (bigger text)
+- **Reduce animations**
+- **Expand technical details**
+
+These toggles are **session-only** (refresh resets).
+
+For prepared scenarios, the UI uses the top-level `correlationId` from the API Gateway JSON response so students can search for the same ID in Docker Compose logs. For custom/manual input, the UI does not guess the async outcome; it tells students to check Docker logs and RabbitMQ UI.
 The API response JSON may still show `"status": "created"` immediately even when the order is later cancelled in the logs.
 
 Scenario buttons:
@@ -723,6 +736,31 @@ After clicking a scenario, watch:
 - The API response panel in the browser.
 - Docker Compose logs in the terminal.
 - RabbitMQ Management UI for exchanges, queues, bindings, and message counts.
+
+## Teacher/Debug Read-Only Endpoints (No DB)
+
+To support the UI's **Scenario State** panel, the demo includes read-only endpoints that expose current in-memory state.
+
+API Gateway proxy (browser calls only the gateway):
+
+```text
+GET /_teacher/stock
+GET /_teacher/orders/:orderId
+```
+
+Underlying service endpoints:
+
+```text
+Inventory Service:
+GET /stock
+GET /stock/:productId
+
+Order Service:
+GET /orders
+GET /orders/:orderId
+```
+
+These endpoints are for teaching/debugging only. They do not add persistence and the values reset on service restart.
 
 ## Health Checks
 

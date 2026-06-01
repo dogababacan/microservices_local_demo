@@ -32,6 +32,39 @@ app.get("/health", (req, res) => {
   });
 });
 
+app.get("/orders", (req, res) => {
+  res.json({
+    service: "order-service",
+    orders,
+  });
+});
+
+app.get("/orders/:orderId", (req, res) => {
+  const { orderId } = req.params;
+  const order = orders.find((entry) => entry.orderId === orderId);
+
+  if (!order) {
+    return res.status(404).json({
+      message: "Order not found",
+      orderId,
+    });
+  }
+
+  res.json({
+    service: "order-service",
+    order,
+  });
+});
+
+app.post("/reset", (req, res) => {
+  orders.length = 0;
+  console.log("[Order Service] Orders list cleared");
+  res.json({
+    service: "order-service",
+    message: "Orders have been cleared",
+  });
+});
+
 app.post("/orders", async (req, res) => {
   const { userId, productId, quantity, correlationId = createId("corr") } = req.body;
 
