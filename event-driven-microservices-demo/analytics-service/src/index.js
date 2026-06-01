@@ -9,6 +9,7 @@ const ROUTING_KEYS = ["#"];
 
 const METRIC_BY_EVENT_TYPE = {
   "order.created": "checkout_started",
+  "order.completed": "order_completed",
   "order.cancelled": "order_cancelled",
   "inventory.reserved": "inventory_reserved",
   "inventory.failed": "checkout_failed_out_of_stock",

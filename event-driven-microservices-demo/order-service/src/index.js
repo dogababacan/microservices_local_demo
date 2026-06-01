@@ -6,6 +6,7 @@ const PORT = process.env.PORT || 3001;
 
 const CHECKOUT_FAILED_QUEUE = "order_service_checkout_failed_queue";
 const CHECKOUT_FAILED_ROUTING_KEYS = ["inventory.failed", "payment.failed"];
+const CHECKOUT_COMPLETED_QUEUE = "order_service_payment_completed_queue";
 
 const orders = [];
 
@@ -119,8 +120,8 @@ async function handleCheckoutFailed(event) {
     return;
   }
 
-  if (order.status === "cancelled") {
-    console.log(`[Order Service] [${correlationId}] Order ${orderId} is already cancelled`);
+  if (order.status === "cancelled" || order.status === "completed") {
+    console.log(`[Order Service] [${correlationId}] Order ${orderId} is already ${order.status}; ignoring ${eventType}`);
     return;
   }
 
@@ -141,13 +142,54 @@ async function handleCheckoutFailed(event) {
   console.log(`[Order Service] [${correlationId}] Published event: order.cancelled`);
 }
 
+async function handlePaymentCompleted(event) {
+  const { correlationId, data } = event;
+  const { orderId, paymentId } = data;
+
+  console.log(`[Order Service] [${correlationId}] Received event: payment.completed`);
+
+  const order = orders.find((entry) => entry.orderId === orderId);
+
+  if (!order) {
+    console.log(`[Order Service] [${correlationId}] No order found for ${orderId}`);
+    return;
+  }
+
+  if (order.status === "completed") {
+    console.log(`[Order Service] [${correlationId}] Order ${orderId} is already completed`);
+    return;
+  }
+
+  if (order.status === "cancelled") {
+    console.log(`[Order Service] [${correlationId}] Order ${orderId} is already cancelled; ignoring payment.completed`);
+    return;
+  }
+
+  order.status = "completed";
+
+  console.log(`[Order Service] [${correlationId}] Completed order ${orderId} after payment.completed`);
+
+  const completedEvent = createEvent("order.completed", correlationId, {
+    orderId,
+    userId: order.userId,
+    productId: order.productId,
+    quantity: order.quantity,
+    paymentId,
+  });
+
+  await publishEvent("order.completed", completedEvent);
+
+  console.log(`[Order Service] [${correlationId}] Published event: order.completed`);
+}
+
 async function start() {
   await connectWithRetry();
   await consumeEvents(CHECKOUT_FAILED_QUEUE, CHECKOUT_FAILED_ROUTING_KEYS, handleCheckoutFailed);
+  await consumeEvents(CHECKOUT_COMPLETED_QUEUE, ["payment.completed"], handlePaymentCompleted);
 
   app.listen(PORT, () => {
     console.log(`[Order Service] Listening on port ${PORT}`);
-    console.log("[Order Service] Waiting for inventory.failed and payment.failed events");
+    console.log("[Order Service] Waiting for inventory.failed, payment.failed, and payment.completed events");
   });
 }
 

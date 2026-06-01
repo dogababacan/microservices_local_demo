@@ -1224,6 +1224,9 @@
 
           <details style="margin: 0 0 16px; border: 1px solid var(--border); border-radius: 12px; padding: 14px; background: rgba(0,0,0,0.22);">
             <summary style="cursor: pointer; font-weight: 600; color: #fff; font-family: 'Outfit', sans-serif;">Exercises (try these in class)</summary>
+            <p style="font-size: 0.86rem; margin: 12px 0; color: var(--text-muted);">
+              Manual checklist only. Run these with Docker logs and RabbitMQ UI (<code>guest</code>/<code>guest</code>); detailed steps are in <code>docs/classroom-exercises.md</code>.
+            </p>
             <div class="exercise-checklist">
               <label class="exercise-item">
                 <input type="checkbox" class="exercise-check" data-exercise="1">
@@ -1457,10 +1460,10 @@
                 </tr>
                 <tr>
                   <td>Order Service</td>
-                  <td>Creates and cancels orders</td>
+                  <td>Creates, completes, and cancels orders</td>
                   <td>Yes</td>
-                  <td><code>order.created</code>, <br><code>order.cancelled</code></td>
-                  <td><code>inventory.failed</code>, <br><code>payment.failed</code></td>
+                  <td><code>order.created</code>, <br><code>order.completed</code>, <br><code>order.cancelled</code></td>
+                  <td><code>payment.completed</code>, <br><code>inventory.failed</code>, <br><code>payment.failed</code></td>
                 </tr>
                 <tr>
                   <td>Inventory Service</td>
@@ -1559,8 +1562,8 @@
                 <div class="service-metadata">
                   <span class="meta-badge"><strong>Port:</strong> <code>3001</code></span>
                   <span class="meta-badge"><strong>Style:</strong> HTTP + RabbitMQ Topic Producer & Consumer</span>
-                  <span class="meta-badge"><strong>Publishes:</strong> <code>order.created</code>, <code>order.cancelled</code></span>
-                  <span class="meta-badge"><strong>Consumes:</strong> <code>inventory.failed</code>, <code>payment.failed</code></span>
+                  <span class="meta-badge"><strong>Publishes:</strong> <code>order.created</code>, <code>order.completed</code>, <code>order.cancelled</code></span>
+                  <span class="meta-badge"><strong>Consumes:</strong> <code>payment.completed</code>, <code>inventory.failed</code>, <code>payment.failed</code></span>
                 </div>
                 <div class="explorer-grid">
                   <div class="explorer-card card-owns">
@@ -1589,6 +1592,7 @@
                     <div class="explorer-card-body">
                       <ul>
                         <li><code>order.created</code>: Announces the booking intent.</li>
+                        <li><code>order.completed</code>: Records that payment succeeded and the order lifecycle reached its happy-path outcome.</li>
                         <li><code>order.cancelled</code>: Cancels the booking to trigger compensations when issues occur downstream.</li>
                       </ul>
                     </div>
@@ -2012,6 +2016,7 @@
           { service: "Order Service", action: "Created Order", event: "order.created", isSuccess: true, beginnerExp: "Creates order, doesn't call Inventory.", beginnerAnalogy: "Posts 'order.created' note to the board.", technicalExp: "Publishes event to exchange.", technicalDetails: { exchange: "ecommerce_events", routingKey: "order.created" } },
           { service: "Inventory Service", action: "Reserved Inventory", event: "inventory.reserved", isSuccess: true, beginnerExp: "Reads note, checks stock, posts new note.", beginnerAnalogy: "Takes note from inbox, posts 'inventory.reserved'.", technicalExp: "Consumes order.created, publishes reserved.", technicalDetails: { queue: "inventory_service_...", routingKey: "inventory.reserved" } },
           { service: "Payment Service", action: "Simulated Payment", event: "payment.completed", isSuccess: true, beginnerExp: "Sees inventory ready, charges customer.", beginnerAnalogy: "Reads inventory note, posts 'payment.completed'.", technicalExp: "Consumes inventory.reserved, publishes completion.", technicalDetails: { queue: "payment_service_...", routingKey: "payment.completed" } },
+          { service: "Order Service", action: "Completed Order", event: "order.completed", isSuccess: true, beginnerExp: "Marks the order completed after payment succeeds.", beginnerAnalogy: "Reads payment.completed and posts 'order.completed'.", because: "Order Service owns the order lifecycle, so it records the final successful status.", technicalExp: "Consumes payment.completed, updates status to completed, publishes order.completed.", technicalDetails: { queue: "order_service_payment_completed_queue", routingKey: "order.completed" } },
           { service: "Notification Service", action: "Final Message", isSuccess: true, beginnerExp: "Prints receipt for customer.", beginnerAnalogy: "Reads payment note, prints message.", technicalExp: "Consumes payment event, logs outcome.", technicalDetails: { queue: "notification_service_..." } }
         ],
         outOfStock: [

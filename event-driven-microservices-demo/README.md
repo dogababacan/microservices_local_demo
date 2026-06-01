@@ -29,7 +29,7 @@ After the order is created, the rest of the system uses events:
 
 ```text
 Happy path:
-order.created -> inventory.reserved -> payment.completed -> notification
+order.created -> inventory.reserved -> payment.completed -> notification + order.completed
 
 Out of stock:
 order.created -> inventory.failed -> notification + order.cancelled
@@ -65,6 +65,27 @@ You can also send the same request from another terminal with curl:
 curl -X POST http://localhost:3000/checkout \
   -H "Content-Type: application/json" \
   -d '{"userId":"student-1","productId":"pencil","quantity":2}'
+```
+
+To verify the classroom runtime after changes, run:
+
+```powershell
+.\scripts\smoke-test.ps1
+```
+
+The smoke test checks health endpoints, resets the in-memory state, and verifies successful, out-of-stock, payment-failure, and invalid checkout scenarios.
+
+RabbitMQ Management UI is available at:
+
+```text
+http://localhost:15672
+```
+
+Login:
+
+```text
+Username: guest
+Password: guest
 ```
 
 ## Main Analogy: RabbitMQ As A Notice Board
@@ -113,7 +134,7 @@ Everything after order creation is event-driven.
 Using the notice-board analogy:
 
 - API Gateway asks Order Service to create an order.
-- Order Service posts an `order.created` note (and later may post `order.cancelled` if checkout fails).
+- Order Service posts an `order.created` note, then later posts `order.completed` or `order.cancelled` when checkout reaches an outcome.
 - Inventory Service reads that note and posts inventory result notes (including `inventory.released` after compensation).
 - Payment Service reads the inventory note and posts payment notes (and may request stock release after failure).
 - Notification Service reads final customer-facing outcome notes and prints messages.
@@ -240,6 +261,7 @@ For example:
 order.created
 inventory.reserved
 payment.completed
+order.completed
 payment.failed
 inventory.release_requested
 inventory.released
@@ -294,6 +316,7 @@ This demo uses stable queue names so they are easy to inspect in the RabbitMQ UI
 inventory_service_order_created_queue
 inventory_service_release_requested_queue
 payment_service_inventory_reserved_queue
+order_service_payment_completed_queue
 order_service_checkout_failed_queue
 notification_service_events_queue
 analytics_service_events_queue
@@ -313,6 +336,7 @@ This demo uses these routing keys:
 
 ```text
 order.created
+order.completed
 order.cancelled
 inventory.reserved
 inventory.failed
@@ -338,6 +362,7 @@ notification_service_events_queue subscribes to payment.failed
 notification_service_events_queue subscribes to inventory.failed
 order_service_checkout_failed_queue subscribes to inventory.failed
 order_service_checkout_failed_queue subscribes to payment.failed
+order_service_payment_completed_queue subscribes to payment.completed
 inventory_service_release_requested_queue subscribes to inventory.release_requested
 analytics_service_events_queue subscribes to # (all events wildcard)
 ```
@@ -352,7 +377,7 @@ A producer is a service that posts a note to the notice board.
 
 Examples:
 
-- Order Service produces `order.created` and `order.cancelled`.
+- Order Service produces `order.created`, `order.completed`, and `order.cancelled`.
 - Inventory Service produces `inventory.reserved`, `inventory.failed`, or `inventory.released`.
 - Payment Service produces `payment.completed`, `payment.failed`, or `inventory.release_requested`.
 
@@ -362,7 +387,7 @@ A consumer is a service that reads notes from its service inbox.
 
 Examples:
 
-- Order Service consumes `inventory.failed` and `payment.failed`.
+- Order Service consumes `payment.completed`, `inventory.failed`, and `payment.failed`.
 - Inventory Service consumes `order.created` and `inventory.release_requested`.
 - Payment Service consumes `inventory.reserved`.
 - Notification Service consumes `payment.completed`, `payment.failed`, and `inventory.failed`.
@@ -438,13 +463,15 @@ The key lesson: each service posts notes and reads notes. Services are not direc
 14. If payment succeeds, Payment Service publishes `payment.completed`.
 15. If payment fails, Payment Service publishes `payment.failed`, then `inventory.release_requested`.
 16. RabbitMQ routes `payment.completed`, `payment.failed`, and `inventory.failed` to `notification_service_events_queue`.
-17. RabbitMQ routes `inventory.failed` and `payment.failed` to `order_service_checkout_failed_queue`.
-18. RabbitMQ routes `inventory.release_requested` to `inventory_service_release_requested_queue`.
-19. Order Service consumes failure events and publishes `order.cancelled`.
-20. Inventory Service consumes `inventory.release_requested` and publishes `inventory.released`.
-21. RabbitMQ routes all published events to `analytics_service_events_queue` (binding `#`).
-22. Notification Service consumes the final customer-facing event and logs a notification.
-23. Analytics Service consumes event copies and logs metrics.
+17. RabbitMQ routes `payment.completed` to `order_service_payment_completed_queue`.
+18. RabbitMQ routes `inventory.failed` and `payment.failed` to `order_service_checkout_failed_queue`.
+19. RabbitMQ routes `inventory.release_requested` to `inventory_service_release_requested_queue`.
+20. Order Service consumes `payment.completed` and publishes `order.completed`.
+21. Order Service consumes failure events and publishes `order.cancelled`.
+22. Inventory Service consumes `inventory.release_requested` and publishes `inventory.released`.
+23. RabbitMQ routes all published events to `analytics_service_events_queue` (binding `#`).
+24. Notification Service consumes the final customer-facing event and logs a notification.
+25. Analytics Service consumes event copies and logs metrics.
 
 Advanced note: different queues bound to the same routing key each receive their own copy of the event. This is why Inventory and Analytics can both receive `order.created`.
 
@@ -486,6 +513,16 @@ It updates the in-memory order to `cancelled` and publishes `order.cancelled`.
 It does not wait for `inventory.released` before cancelling on payment failure. That is intentional: order outcome and stock compensation are separate async steps (eventual consistency).
 
 The HTTP response from `POST /checkout` may still show `"status": "created"` because the gateway returns before these async steps finish. Search logs for `order.cancelled`.
+
+## Why Order Service Completes Orders On Payment Success
+
+Order Service owns the order lifecycle, so it also listens for:
+
+- `payment.completed`
+
+When payment succeeds, Order Service updates the in-memory order to `completed` and publishes `order.completed`.
+
+Notification Service still listens to `payment.completed` for the customer-facing confirmation. `order.completed` exists to make the order lifecycle visible for teaching and analytics.
 
 ## Why Inventory Does Not Directly Call Payment
 
@@ -808,6 +845,18 @@ Look for these parts:
 
 During the catch-up demo, stop `notification-service`, send a checkout, and watch its queue hold a message until the service starts again.
 
+## Classroom Exercises
+
+The UI includes an **Exercises (try these in class)** checklist. It is a progress checklist only; it does not run Docker commands or inspect RabbitMQ live state.
+
+Detailed step-by-step exercise instructions are in:
+
+```text
+docs/classroom-exercises.md
+```
+
+Use those instructions with Docker logs and RabbitMQ Management UI. The scripted browser timeline is useful for explaining the scenario, but RabbitMQ queues and service logs are the source of truth for catch-up, modularity, routing, and consistency exercises.
+
 ## Read The Logs Like A Story
 
 Every checkout gets a `correlationId`.
@@ -890,6 +939,10 @@ Expected logs:
 [Payment Service] [corr_123] Payment completed
 [Payment Service] [corr_123] Published event: payment.completed
 
+[Order Service] [corr_123] Received event: payment.completed
+[Order Service] [corr_123] Completed order ord_123 after payment.completed
+[Order Service] [corr_123] Published event: order.completed
+
 [Notification Service] [corr_123] Received event: payment.completed
 [Notification Service] [corr_123] Notification: Order ord_123 confirmed
 
@@ -899,6 +952,8 @@ Expected logs:
 [Analytics Service] [corr_123] Metric: inventory_reserved
 [Analytics Service] [corr_123] Received event: payment.completed
 [Analytics Service] [corr_123] Metric: checkout_completed
+[Analytics Service] [corr_123] Received event: order.completed
+[Analytics Service] [corr_123] Metric: order_completed
 ```
 
 Notice-board version:
@@ -907,6 +962,7 @@ Notice-board version:
 Order posts order.created.
 Inventory reads order.created and posts inventory.reserved.
 Payment reads inventory.reserved and posts payment.completed.
+Order reads payment.completed and posts order.completed.
 Notification reads payment.completed and prints the confirmation.
 ```
 
@@ -1038,6 +1094,7 @@ Metrics it logs:
 
 ```text
 order.created -> checkout_started
+order.completed -> order_completed
 order.cancelled -> order_cancelled
 inventory.reserved -> inventory_reserved
 inventory.failed -> checkout_failed_out_of_stock
