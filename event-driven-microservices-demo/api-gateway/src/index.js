@@ -4,6 +4,19 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const ORDER_SERVICE_URL = process.env.ORDER_SERVICE_URL || "http://localhost:3001";
 const INVENTORY_SERVICE_URL = process.env.INVENTORY_SERVICE_URL || "http://inventory-service:3002";
+const RABBITMQ_MANAGEMENT_URL = process.env.RABBITMQ_MANAGEMENT_URL || "http://rabbitmq:15672";
+const RABBITMQ_MANAGEMENT_USERNAME = process.env.RABBITMQ_MANAGEMENT_USERNAME || "guest";
+const RABBITMQ_MANAGEMENT_PASSWORD = process.env.RABBITMQ_MANAGEMENT_PASSWORD || "guest";
+
+const TEACHING_QUEUE_NAMES = [
+  "notification_service_events_queue",
+  "analytics_service_events_queue",
+  "order_service_payment_completed_queue",
+  "order_service_checkout_failed_queue",
+  "inventory_service_order_created_queue",
+  "inventory_service_release_requested_queue",
+  "payment_service_inventory_reserved_queue",
+];
 
 app.use(express.json());
 app.use(express.static("src/public"));
@@ -41,6 +54,51 @@ app.get("/_teacher/orders/:orderId", async (req, res) => {
   } catch (error) {
     res.status(502).json({
       message: "Order Service is unavailable",
+    });
+  }
+});
+
+app.get("/_teacher/rabbitmq/queues", async (req, res) => {
+  const authHeader = Buffer.from(`${RABBITMQ_MANAGEMENT_USERNAME}:${RABBITMQ_MANAGEMENT_PASSWORD}`).toString("base64");
+
+  try {
+    const response = await fetch(`${RABBITMQ_MANAGEMENT_URL}/api/queues`, {
+      headers: {
+        Authorization: `Basic ${authHeader}`,
+      },
+    });
+
+    if (!response.ok) {
+      return res.status(502).json({
+        message: "RabbitMQ Management API is unavailable",
+        status: response.status,
+      });
+    }
+
+    const queues = await response.json();
+    const queuesByName = new Map(queues.map((queue) => [queue.name, queue]));
+
+    res.json({
+      service: "api-gateway",
+      source: "rabbitmq-management-api",
+      observedAt: new Date().toISOString(),
+      queues: TEACHING_QUEUE_NAMES.map((name) => {
+        const queue = queuesByName.get(name);
+
+        return {
+          name,
+          exists: Boolean(queue),
+          state: queue?.state || "missing",
+          messagesReady: queue?.messages_ready ?? 0,
+          messagesUnacknowledged: queue?.messages_unacknowledged ?? 0,
+          consumers: queue?.consumers ?? 0,
+        };
+      }),
+    });
+  } catch (error) {
+    res.status(502).json({
+      message: "RabbitMQ Management API is unavailable",
+      error: error.message,
     });
   }
 });

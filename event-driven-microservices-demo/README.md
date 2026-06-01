@@ -740,7 +740,21 @@ The web UI is only a friendly way to create the same `POST /checkout` request sh
 
 The browser sends HTTP to the API Gateway. The API Gateway forwards the request to Order Service. After the order is created, RabbitMQ events drive the rest of the workflow.
 
-The Event Flow Timeline in the UI is a classroom visualization based on the selected scenario and API response. It is not live RabbitMQ tracing. Use Docker logs and RabbitMQ Management UI to observe the real backend behavior.
+The **Expected Scenario Flow** tab is a classroom visualization based on the selected scenario and API response. It is not live RabbitMQ tracing.
+
+The **Live Broker Lab** tab reads real RabbitMQ queue state every second through the RabbitMQ Management API. Use it with Docker logs to observe queue buildup, stopped consumers, and message drain during catch-up demos.
+
+Live Broker Lab is especially useful for comparing two failure positions:
+
+- If a downstream event consumer such as Notification Service or Inventory Service is stopped, its queue can hold messages and continue when the service returns.
+- If Order Service is stopped, API Gateway cannot create the order because that first call is synchronous. In that case no `order.created` event exists yet, so RabbitMQ has nothing to queue.
+
+Queue consumer rule for students:
+
+- Multiple consumers on one queue are competing readers. RabbitMQ delivers each message to one consumer, not all consumers.
+- Use multiple consumers on the same queue to scale more instances of the same service, such as two Notification Service containers sharing notification work.
+- Do not attach different services to the same queue if both services must see every event; they would split the messages and miss some events.
+- If different services need the same event, give each service its own queue bound to the same exchange/routing key.
 
 For the **out-of-stock** and **payment failure** scenarios, the timeline includes extra steps such as `order.cancelled`, `inventory.release_requested`, and `inventory.released`. The **Analytics Service** panel beside the timeline animates as each scripted event appears (teaching visualization, not live broker tracing).
 
@@ -771,7 +785,9 @@ Scenario buttons:
 After clicking a scenario, watch:
 
 - The API response panel in the browser.
-- Docker Compose logs in the terminal.
+- The **Expected Scenario Flow** tab for the guided scenario explanation.
+- The **Live Broker Lab** tab for real queue counts.
+- Docker Compose logs in the terminal for proof of which service consumed the event.
 - RabbitMQ Management UI for exchanges, queues, bindings, and message counts.
 
 ## Teacher/Debug Read-Only Endpoints (No DB)
@@ -855,7 +871,7 @@ Detailed step-by-step exercise instructions are in:
 docs/classroom-exercises.md
 ```
 
-Use those instructions with Docker logs and RabbitMQ Management UI. The scripted browser timeline is useful for explaining the scenario, but RabbitMQ queues and service logs are the source of truth for catch-up, modularity, routing, and consistency exercises.
+Use those instructions with the **Live Broker Lab**, Docker logs, and RabbitMQ Management UI. The scripted browser timeline is useful for explaining the expected scenario, but RabbitMQ queues and service logs are the source of truth for catch-up, modularity, routing, and consistency exercises.
 
 ## Read The Logs Like A Story
 
@@ -1355,11 +1371,11 @@ This demo is intentionally simple. A real system would add:
 - Automated tests.
 - Graceful shutdown handling.
 
-## Visual Event Timeline
+## Visual Teaching Tools
 
-This project now includes an educational Visual Event Timeline in the web UI at `http://localhost:3000`.
+This project now includes an educational **Expected Scenario Flow** and **Live Broker Lab** in the web UI at `http://localhost:3000`.
 
-Why the timeline exists:
+Why the Expected Scenario Flow exists:
 - It provides a classroom visualization of the event flow based on the selected scenario and API response.
 - It is designed to be easier to read than mixed container logs, making it ideal for classroom instruction.
 - It maps the HTTP request and subsequent event-driven steps clearly to the notice-board analogy.
@@ -1373,7 +1389,7 @@ How to use it during class:
 - For custom/manual input, the UI does not guess the async outcome. Check Docker logs and RabbitMQ Management UI for what actually happened.
 
 Important Note:
-The timeline is a teaching visualization. It is not live RabbitMQ tracing. The real service logs in Docker Compose and RabbitMQ Management UI are still the source for observing real backend behavior.
+The Expected Scenario Flow is a teaching visualization. It is not live RabbitMQ tracing. The Live Broker Lab reads real RabbitMQ queue state, and Docker Compose logs show which service consumed each event.
 
 ## Service Explorer
 

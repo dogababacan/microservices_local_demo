@@ -191,6 +191,7 @@
 
       .tab-pane { display: none; animation: fadeIn 0.3s ease forwards; }
       .tab-pane.active { display: block; }
+      #timeline-tab { container-type: inline-size; }
       @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 
       .view-toggle {
@@ -263,6 +264,7 @@
         grid-template-columns: minmax(0, 1fr) minmax(340px, 440px);
         gap: 24px;
         align-items: start;
+        container-type: inline-size;
       }
       @media (max-width: 1200px) {
         .timeline-wrapper { grid-template-columns: 1fr; }
@@ -307,7 +309,7 @@
       .timeline-card:hover { background: rgba(30, 41, 59, 0.9); border-color: var(--border-light); transform: translateY(-2px); }
 
       .card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
-      .service-name { font-family: 'Outfit', sans-serif; font-size: 1.2rem; font-weight: 600; color: #fff; display: flex; align-items: center; gap: 8px; }
+      .service-name { font-family: 'Outfit', sans-serif; font-size: 1.2rem; font-weight: 600; color: #fff; display: flex; align-items: center; gap: 8px; min-width: 0; }
       .action-badge { background: rgba(255,255,255,0.1); padding: 4px 10px; border-radius: 6px; font-size: 0.8rem; color: var(--text-muted); font-weight: 500; }
       
       .event-envelope {
@@ -430,6 +432,35 @@
         user-select: none;
       }
       .toggle input { transform: translateY(1px); }
+      .live-state-toggle {
+        display: inline-grid;
+        grid-template-columns: 14px auto auto;
+        align-items: center;
+        gap: 8px;
+        padding: 7px 10px;
+        border: 1px solid rgba(255,255,255,0.07);
+        border-radius: 8px;
+        background: rgba(255,255,255,0.03);
+        color: var(--text-main);
+        line-height: 1.2;
+      }
+      .live-state-toggle input {
+        width: 14px;
+        height: 14px;
+        margin: 0;
+        transform: none;
+      }
+      .toggle-note-pill {
+        display: inline-flex;
+        align-items: center;
+        padding: 2px 7px;
+        border-radius: 999px;
+        border: 1px solid rgba(255,255,255,0.1);
+        background: rgba(255,255,255,0.04);
+        color: var(--text-muted);
+        font-size: 0.72rem;
+        font-family: 'JetBrains Mono', monospace;
+      }
 
       /* Global Observers Panel */
       .global-observers {
@@ -619,13 +650,33 @@
         font-family: 'Outfit', sans-serif;
       }
       .settings-popover .toggle {
-        display: flex;
+        display: grid;
+        grid-template-columns: 18px minmax(0, 1fr);
         align-items: center;
-        gap: 8px;
-        margin-bottom: 10px;
+        gap: 10px;
+        margin-bottom: 8px;
+        padding: 8px 10px;
+        border: 1px solid rgba(255,255,255,0.06);
+        border-radius: 8px;
+        background: rgba(255,255,255,0.025);
         cursor: pointer;
-        font-size: 0.85rem;
-        color: var(--text-code);
+        color: var(--text-main);
+        line-height: 1.25;
+        transition: border-color 0.2s ease, background 0.2s ease;
+      }
+      .settings-popover .toggle:hover {
+        border-color: rgba(255,255,255,0.14);
+        background: rgba(255,255,255,0.045);
+      }
+      .settings-popover .toggle input {
+        width: 14px;
+        height: 14px;
+        margin: 0;
+        justify-self: center;
+      }
+      .settings-popover .toggle span {
+        font-size: 0.86rem;
+        font-weight: 500;
       }
       .settings-popover .note {
         font-size: 0.75rem;
@@ -633,6 +684,31 @@
         display: block;
         margin-top: 10px;
         text-align: center;
+      }
+      .timeline-empty-state {
+        min-height: 132px;
+        display: grid;
+        place-items: center;
+        padding: 28px;
+        border: 1px dashed rgba(96, 165, 250, 0.28);
+        border-radius: 12px;
+        background: rgba(15, 23, 42, 0.45);
+        color: var(--text-muted);
+        text-align: center;
+      }
+      .timeline-empty-state strong {
+        display: block;
+        margin-bottom: 6px;
+        color: #e2e8f0;
+        font-family: 'Outfit', sans-serif;
+        font-size: 1rem;
+        font-weight: 600;
+      }
+      .timeline-empty-state span {
+        display: block;
+        max-width: 360px;
+        font-size: 0.9rem;
+        line-height: 1.45;
       }
 
       /* Classroom Interactive Exercises Checklist */
@@ -690,6 +766,266 @@
         text-decoration: line-through;
         opacity: 0.5;
       }
+
+      /* Live Broker Lab */
+      .broker-lab {
+        display: grid;
+        gap: 18px;
+      }
+      .broker-status-strip {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 10px;
+      }
+      @media (max-width: 1100px) {
+        .broker-status-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      }
+      @media (max-width: 640px) {
+        .broker-status-strip { grid-template-columns: 1fr; }
+      }
+      .broker-stat {
+        background: rgba(0,0,0,0.24);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 12px;
+      }
+      .broker-stat span {
+        display: block;
+        color: var(--text-muted);
+        font-size: 0.76rem;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        margin-bottom: 4px;
+      }
+      .broker-stat strong {
+        display: block;
+        color: #fff;
+        font-size: 1rem;
+        font-family: 'JetBrains Mono', monospace;
+        word-break: break-word;
+      }
+      .broker-layout {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 360px;
+        gap: 18px;
+        align-items: start;
+      }
+      @media (max-width: 1180px) {
+        .broker-layout { grid-template-columns: 1fr; }
+      }
+      .queue-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 12px;
+      }
+      .queue-card {
+        position: relative;
+        overflow: hidden;
+        background: rgba(15, 23, 42, 0.8);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 14px;
+        display: grid;
+        gap: 12px;
+        min-height: 178px;
+        transition: border-color 0.25s ease, background 0.25s ease, transform 0.25s ease;
+      }
+      .queue-card::before {
+        content: '';
+        position: absolute;
+        inset: 0 auto 0 0;
+        width: 4px;
+        background: var(--success);
+        opacity: 0.8;
+      }
+      .queue-card.waiting {
+        border-color: rgba(245, 158, 11, 0.45);
+        background: rgba(45, 32, 12, 0.55);
+      }
+      .queue-card.waiting::before { background: var(--warning); }
+      .queue-card.stopped {
+        border-color: rgba(239, 68, 68, 0.48);
+        background: rgba(45, 16, 22, 0.55);
+      }
+      .queue-card.stopped::before { background: var(--danger); }
+      .queue-card.changed {
+        animation: queuePulse 0.7s ease;
+      }
+      .queue-card.drained {
+        animation: queueDrain 0.9s ease;
+      }
+      @keyframes queuePulse {
+        0% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.45); transform: translateY(0); }
+        45% { box-shadow: 0 0 0 8px rgba(245, 158, 11, 0); transform: translateY(-2px); }
+        100% { box-shadow: none; transform: translateY(0); }
+      }
+      @keyframes queueDrain {
+        0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.45); }
+        50% { box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
+        100% { box-shadow: none; }
+      }
+      .queue-card-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 10px;
+      }
+      .queue-owner {
+        color: #fff;
+        font-family: 'Outfit', sans-serif;
+        font-size: 1rem;
+        font-weight: 600;
+      }
+      .queue-name {
+        color: var(--text-muted);
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.72rem;
+        word-break: break-all;
+        margin-top: 3px;
+      }
+      .queue-state-pill {
+        border: 1px solid rgba(16,185,129,0.35);
+        color: var(--success);
+        background: rgba(16,185,129,0.08);
+        border-radius: 999px;
+        padding: 4px 8px;
+        font-size: 0.72rem;
+        font-weight: 700;
+        white-space: nowrap;
+      }
+      .queue-card.waiting .queue-state-pill {
+        border-color: rgba(245,158,11,0.35);
+        color: var(--warning);
+        background: rgba(245,158,11,0.08);
+      }
+      .queue-card.stopped .queue-state-pill {
+        border-color: rgba(239,68,68,0.35);
+        color: var(--danger);
+        background: rgba(239,68,68,0.08);
+      }
+      .queue-metrics {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 8px;
+      }
+      .queue-metric {
+        background: rgba(0,0,0,0.23);
+        border: 1px solid rgba(255,255,255,0.06);
+        border-radius: 8px;
+        padding: 8px;
+        min-height: 68px;
+      }
+      .queue-metric span {
+        display: block;
+        color: var(--text-muted);
+        font-size: 0.7rem;
+        margin-bottom: 5px;
+      }
+      .queue-metric strong {
+        display: block;
+        color: #fff;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 1.15rem;
+      }
+      .queue-meaning {
+        color: var(--text-muted);
+        font-size: 0.84rem;
+        line-height: 1.45;
+        min-height: 38px;
+      }
+      .broker-side-panel {
+        display: grid;
+        gap: 12px;
+      }
+      .broker-guide-card {
+        background: rgba(0,0,0,0.24);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 14px;
+      }
+      .broker-guide-card h3 {
+        margin-bottom: 8px;
+        font-size: 1rem;
+      }
+      .broker-guide-card p {
+        margin-bottom: 10px;
+        font-size: 0.88rem;
+      }
+      .broker-step-list {
+        display: grid;
+        gap: 8px;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+      }
+      .broker-step-list li {
+        display: grid;
+        grid-template-columns: 24px 1fr;
+        gap: 8px;
+        align-items: start;
+        color: var(--text-muted);
+        font-size: 0.86rem;
+      }
+      .broker-step-list b {
+        width: 24px;
+        height: 24px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(59,130,246,0.15);
+        border: 1px solid rgba(59,130,246,0.35);
+        color: #93c5fd;
+        border-radius: 999px;
+        font-size: 0.75rem;
+      }
+      .command-copy {
+        position: relative;
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 8px;
+        align-items: center;
+        background: rgba(0,0,0,0.35);
+        border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 8px;
+        padding: 8px;
+        margin-top: 8px;
+      }
+      .command-copy code {
+        border: none;
+        background: transparent;
+        padding: 0;
+        color: var(--text-code);
+        word-break: break-word;
+      }
+      .copy-command-btn {
+        border: 1px solid var(--border);
+        background: rgba(255,255,255,0.05);
+        color: var(--text-main);
+        border-radius: 6px;
+        padding: 6px 8px;
+        font-size: 0.75rem;
+        cursor: pointer;
+      }
+      .copy-command-btn:hover {
+        border-color: var(--border-light);
+        background: rgba(255,255,255,0.09);
+      }
+      .notice-list {
+        display: grid;
+        gap: 8px;
+      }
+      .notice-item {
+        border-left: 3px solid var(--primary);
+        background: rgba(255,255,255,0.035);
+        border-radius: 0 8px 8px 0;
+        padding: 9px 10px;
+        color: var(--text-muted);
+        font-size: 0.86rem;
+        line-height: 1.4;
+      }
+      .notice-item.warning { border-left-color: var(--warning); }
+      .notice-item.danger { border-left-color: var(--danger); }
+      .notice-item.success { border-left-color: var(--success); }
 
       /* Because Line (Cause & Effect) */
       .because-card {
@@ -917,6 +1253,95 @@
         color: var(--text-code);
         font-family: 'JetBrains Mono', monospace;
         font-weight: 500;
+      }
+      @container (max-width: 880px) {
+        .timeline-wrapper {
+          grid-template-columns: 1fr;
+          gap: 18px;
+        }
+        .sidebar-stack {
+          position: static;
+        }
+        .timeline {
+          gap: 12px;
+        }
+        .timeline::before {
+          left: 16px;
+        }
+        .timeline-card {
+          margin-left: 34px;
+          padding: 16px;
+          border-radius: 10px;
+        }
+        .timeline-card::before {
+          left: -23px;
+        }
+        .card-header {
+          gap: 10px;
+        }
+        .service-name {
+          font-size: 1.05rem;
+          line-height: 1.25;
+        }
+        .action-badge {
+          max-width: 150px;
+          padding: 4px 8px;
+          font-size: 0.76rem;
+          line-height: 1.25;
+          text-align: right;
+        }
+        .state-panel {
+          padding: 14px;
+          border-radius: 10px;
+        }
+        .state-title {
+          align-items: flex-start;
+        }
+        .state-subtitle {
+          font-size: 0.82rem;
+          line-height: 1.45;
+        }
+        .state-card .card-head {
+          gap: 10px;
+        }
+        .state-card h4 {
+          min-width: 0;
+          line-height: 1.25;
+        }
+        .state-card .order-id-badge {
+          max-width: 190px;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+      }
+      @container (max-width: 560px) {
+        .card-header,
+        .state-card .card-head,
+        .state-meta-row {
+          flex-direction: column;
+          align-items: flex-start;
+        }
+        .action-badge {
+          max-width: 100%;
+          text-align: left;
+        }
+        .state-card .order-id-badge,
+        .state-card .product-badge {
+          max-width: 100%;
+        }
+        .inventory-flow-visual {
+          grid-template-columns: 1fr;
+        }
+        .flow-delta-arrow {
+          min-width: 0;
+          width: 100%;
+        }
+        .flow-delta-arrow .arrow-line {
+          transform: rotate(90deg);
+          width: 32px;
+          margin: 7px auto;
+        }
       }
 
       /* Service Explorer Card Layout */
@@ -1187,14 +1612,15 @@
       <!-- RIGHT COLUMN: VISUALIZATIONS -->
       <div class="right-col">
         <div class="tabs">
-          <button class="tab-btn active" data-target="timeline-tab">Event Timeline</button>
+          <button class="tab-btn active" data-target="timeline-tab">Expected Scenario Flow</button>
+          <button class="tab-btn" data-target="broker-lab-tab">Live Broker Lab</button>
           <button class="tab-btn" data-target="explorer-tab">Service Explorer</button>
         </div>
 
         <!-- TIMELINE TAB -->
         <section id="timeline-tab" class="tab-pane active">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-            <h2 style="margin: 0;">Live Event Flow</h2>
+            <h2 style="margin: 0;">Expected Scenario Flow</h2>
             <div style="display: flex; align-items: center; gap: 10px;">
               <div class="view-toggle" style="margin-bottom: 0;">
                 <button id="btn-beginner" class="active">Beginner (Notice Board)</button>
@@ -1206,9 +1632,9 @@
                 </button>
                 <div id="settings-popover" class="settings-popover">
                   <h3>Classroom Settings</h3>
-                  <label class="toggle"><input id="toggle-presentation" type="checkbox"> Presentation mode</label>
-                  <label class="toggle"><input id="toggle-reduce-animations" type="checkbox"> Reduce animations</label>
-                  <label class="toggle"><input id="toggle-expand-tech" type="checkbox"> Expand technical details</label>
+                  <label class="toggle"><input id="toggle-presentation" type="checkbox"><span>Presentation mode</span></label>
+                  <label class="toggle"><input id="toggle-reduce-animations" type="checkbox"><span>Reduce animations</span></label>
+                  <label class="toggle"><input id="toggle-expand-tech" type="checkbox"><span>Expand technical details</span></label>
                   <div style="border-top: 1px solid var(--border); margin: 12px 0 0; padding-top: 12px;">
                     <button id="btn-reset-system" class="ctrl-btn" style="width: 100%; justify-content: center; display: flex; align-items: center; gap: 8px; background: rgba(239, 68, 68, 0.1); border-color: rgba(239, 68, 68, 0.2); color: var(--danger); font-weight: 500;">
                       <svg class="icon" viewBox="0 0 24 24"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 11-.57-8.38l5.67-5.67"/></svg>
@@ -1220,7 +1646,7 @@
               </div>
             </div>
           </div>
-          <p>Watch the visualization below after sending a request. Real logs are in your terminal.</p>
+          <p>This is a guided visualization of the selected scenario, not live RabbitMQ tracing. Use the Live Broker Lab, RabbitMQ UI, and Docker logs to observe real queue behavior.</p>
 
           <details style="margin: 0 0 16px; border: 1px solid var(--border); border-radius: 12px; padding: 14px; background: rgba(0,0,0,0.22);">
             <summary style="cursor: pointer; font-weight: 600; color: #fff; font-family: 'Outfit', sans-serif;">Exercises (try these in class)</summary>
@@ -1330,8 +1756,11 @@
           <div class="timeline-wrapper">
             <!-- Main Timeline Sequence -->
             <div id="timeline-container" class="timeline">
-              <div style="text-align: center; color: var(--text-muted); padding: 60px 0; font-style: italic;">
-                Hit "Send Request" to trace the flow...
+              <div class="timeline-empty-state">
+                <div>
+                  <strong>No scenario selected yet</strong>
+                  <span>Send a checkout request to build the expected service flow here.</span>
+                </div>
               </div>
             </div>
 
@@ -1346,9 +1775,10 @@
                   Helps explain consistency. Live state reads in-memory data (no DB). If live is off/unavailable, values are illustrative.
                 </div>
 
-                <label class="toggle">
+                <label class="toggle live-state-toggle">
                   <input id="toggle-live-state" type="checkbox" checked>
-                  Live state (read-only)
+                  <span>Live state</span>
+                  <span class="toggle-note-pill">read-only</span>
                 </label>
 
                 <div class="state-grid" style="margin-top: 14px; display: grid; gap: 12px;">
@@ -1430,6 +1860,160 @@
                   <!-- Logs will be appended here -->
                 </div>
               </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- LIVE BROKER LAB TAB -->
+        <section id="broker-lab-tab" class="tab-pane">
+          <div class="broker-lab">
+            <div>
+              <h2>Live Broker Lab</h2>
+              <p>This panel reads real RabbitMQ queue state every second. Use it to show messages waiting while a service is stopped, then draining when the service starts again.</p>
+            </div>
+
+            <div class="broker-status-strip">
+              <div class="broker-stat">
+                <span>RabbitMQ API</span>
+                <strong id="broker-api-status">Connecting</strong>
+              </div>
+              <div class="broker-stat">
+                <span>Polling</span>
+                <strong id="broker-poll-status">Every 1s</strong>
+              </div>
+              <div class="broker-stat">
+                <span>Last refresh</span>
+                <strong id="broker-last-refresh">-</strong>
+              </div>
+              <div class="broker-stat">
+                <span>Queues with waiting messages</span>
+                <strong id="broker-waiting-count">0</strong>
+              </div>
+            </div>
+
+            <div class="broker-layout">
+              <div>
+                <div class="broker-guide-card" style="margin-bottom: 12px;">
+                  <h3>How to read the live metrics</h3>
+                  <div class="queue-metrics">
+                    <div class="queue-metric">
+                      <span>Ready</span>
+                      <strong>wait</strong>
+                    </div>
+                    <div class="queue-metric">
+                      <span>Unacked</span>
+                      <strong>work</strong>
+                    </div>
+                    <div class="queue-metric">
+                      <span>Consumers</span>
+                      <strong>readers</strong>
+                    </div>
+                  </div>
+                  <p style="margin-top: 10px; margin-bottom: 0;">Ready means messages are waiting in the service inbox. Unacked means a service has received messages but has not confirmed them yet. Consumers means running service instances currently reading from that queue.</p>
+                </div>
+                <div class="broker-guide-card" style="margin-bottom: 12px;">
+                  <h3>One queue, many consumers</h3>
+                  <p>Multiple consumers on the same queue are competing readers. RabbitMQ gives each message to one of them, so this is useful for scaling more instances of the same service.</p>
+                  <div class="notice-list">
+                    <div class="notice-item success"><code>notification_service_events_queue</code> with 2 consumers means two Notification Service instances can share notification work.</div>
+                    <div class="notice-item warning">Do not put different services on one queue if both must see every event; they would split messages and miss some events.</div>
+                    <div class="notice-item">Different services that need the same event should each have their own queue bound to the same exchange/routing key.</div>
+                  </div>
+                </div>
+                <div id="queue-grid" class="queue-grid">
+                  <div style="color: var(--text-muted); padding: 30px 0;">Loading live RabbitMQ queues...</div>
+                </div>
+              </div>
+
+              <aside class="broker-side-panel">
+                <div class="broker-guide-card">
+                  <h3>Manual Stopped-Service Demos</h3>
+                  <p>The browser observes the broker. Run container commands in your terminal; the app does not stop or start Docker services.</p>
+                  <div class="notice-list" style="margin-bottom: 12px;">
+                    <div class="notice-item success">Stopped downstream event consumer: queue stacks and resumes later.</div>
+                    <div class="notice-item warning">Stopped synchronous entry dependency: request fails before an event exists.</div>
+                    <div class="notice-item">Not every stopped service behaves the same; it depends where it sits in the flow.</div>
+                  </div>
+
+                  <h3>Notification stopped</h3>
+                  <p>Checkout still completes; the customer message waits in Notification Service's inbox.</p>
+                  <ol class="broker-step-list">
+                    <li><b>1</b><span>Stop Notification Service.</span></li>
+                    <li><b>2</b><span>Send a successful checkout from the left form.</span></li>
+                    <li><b>3</b><span>Watch <code>notification_service_events_queue</code> stack a ready message.</span></li>
+                    <li><b>4</b><span>Start Notification Service.</span></li>
+                    <li><b>5</b><span>Watch the ready message drain back to zero.</span></li>
+                  </ol>
+                  <div class="command-copy">
+                    <code>docker compose stop notification-service</code>
+                    <button type="button" class="copy-command-btn" data-command="docker compose stop notification-service">Copy</button>
+                  </div>
+                  <div class="command-copy">
+                    <code>docker compose start notification-service</code>
+                    <button type="button" class="copy-command-btn" data-command="docker compose start notification-service">Copy</button>
+                  </div>
+                  <div class="command-copy">
+                    <code>docker compose logs -f notification-service</code>
+                    <button type="button" class="copy-command-btn" data-command="docker compose logs -f notification-service">Copy</button>
+                  </div>
+
+                  <h3 style="margin-top: 16px;">Inventory stopped</h3>
+                  <p>The order is accepted, but <code>order.created</code> waits until Inventory Service returns.</p>
+                  <ol class="broker-step-list">
+                    <li><b>1</b><span>Stop Inventory Service.</span></li>
+                    <li><b>2</b><span>Send a successful checkout from the left form.</span></li>
+                    <li><b>3</b><span>Watch <code>inventory_service_order_created_queue</code> stack a ready message.</span></li>
+                    <li><b>4</b><span>Start Inventory Service.</span></li>
+                    <li><b>5</b><span>Watch inventory, payment, notification, and order completion continue.</span></li>
+                  </ol>
+                  <div class="command-copy">
+                    <code>docker compose stop inventory-service</code>
+                    <button type="button" class="copy-command-btn" data-command="docker compose stop inventory-service">Copy</button>
+                  </div>
+                  <div class="command-copy">
+                    <code>docker compose start inventory-service</code>
+                    <button type="button" class="copy-command-btn" data-command="docker compose start inventory-service">Copy</button>
+                  </div>
+                  <div class="command-copy">
+                    <code>docker compose logs -f inventory-service payment-service order-service notification-service</code>
+                    <button type="button" class="copy-command-btn" data-command="docker compose logs -f inventory-service payment-service order-service notification-service">Copy</button>
+                  </div>
+
+                  <h3 style="margin-top: 16px;">Order stopped</h3>
+                  <p>The first synchronous HTTP dependency is down, so checkout fails before any event is published.</p>
+                  <ol class="broker-step-list">
+                    <li><b>1</b><span>Stop Order Service.</span></li>
+                    <li><b>2</b><span>Send a checkout from the left form.</span></li>
+                    <li><b>3</b><span>Observe the API Gateway response: <code>502</code>.</span></li>
+                    <li><b>4</b><span>Notice that RabbitMQ queues do not stack because <code>order.created</code> was never published.</span></li>
+                    <li><b>5</b><span>Start Order Service before continuing class.</span></li>
+                  </ol>
+                  <div class="command-copy">
+                    <code>docker compose stop order-service</code>
+                    <button type="button" class="copy-command-btn" data-command="docker compose stop order-service">Copy</button>
+                  </div>
+                  <div class="command-copy">
+                    <code>docker compose start order-service</code>
+                    <button type="button" class="copy-command-btn" data-command="docker compose start order-service">Copy</button>
+                  </div>
+                  <div class="command-copy">
+                    <code>docker compose logs -f api-gateway order-service</code>
+                    <button type="button" class="copy-command-btn" data-command="docker compose logs -f api-gateway order-service">Copy</button>
+                  </div>
+                </div>
+
+                <div class="broker-guide-card">
+                  <h3>What students should notice</h3>
+                  <div id="broker-notices" class="notice-list">
+                    <div class="notice-item">Waiting for live queue data...</div>
+                  </div>
+                </div>
+
+                <div class="broker-guide-card">
+                  <h3>Source of truth</h3>
+                  <p>The Expected Scenario Flow explains what should happen. This tab shows what RabbitMQ is actually holding right now. Docker logs prove which service consumed the delayed event.</p>
+                </div>
+              </aside>
             </div>
           </div>
         </section>
@@ -1877,6 +2461,12 @@
 
       const btnBeginner = document.getElementById('btn-beginner');
       const btnTechnical = document.getElementById('btn-technical');
+      const queueGridEl = document.getElementById('queue-grid');
+      const brokerApiStatusEl = document.getElementById('broker-api-status');
+      const brokerPollStatusEl = document.getElementById('broker-poll-status');
+      const brokerLastRefreshEl = document.getElementById('broker-last-refresh');
+      const brokerWaitingCountEl = document.getElementById('broker-waiting-count');
+      const brokerNoticesEl = document.getElementById('broker-notices');
       
       let currentView = 'beginner'; 
       let currentCorrelationId = 'corr_XXXX';
@@ -1884,6 +2474,40 @@
       let lastOrderId = null;
       let lastInventoryStock = null;
       let liveStartingStock = null;
+      let brokerPollTimer = null;
+      let previousQueueReadyCounts = new Map();
+      let lastDrainQueueName = null;
+
+      const QUEUE_DESCRIPTIONS = {
+        notification_service_events_queue: {
+          owner: "Notification Service",
+          role: "Customer messages wait here when Notification Service is stopped.",
+        },
+        analytics_service_events_queue: {
+          owner: "Analytics Service",
+          role: "Observer copy of every event. Checkout does not depend on it.",
+        },
+        order_service_payment_completed_queue: {
+          owner: "Order Service",
+          role: "Payment success arrives here so orders can become completed.",
+        },
+        order_service_checkout_failed_queue: {
+          owner: "Order Service",
+          role: "Inventory and payment failures arrive here so orders can be cancelled.",
+        },
+        inventory_service_order_created_queue: {
+          owner: "Inventory Service",
+          role: "New order events arrive here before stock is reserved or rejected.",
+        },
+        inventory_service_release_requested_queue: {
+          owner: "Inventory Service",
+          role: "Compensation requests wait here after payment failure.",
+        },
+        payment_service_inventory_reserved_queue: {
+          owner: "Payment Service",
+          role: "Reserved inventory events arrive here before payment is attempted.",
+        },
+      };
 
       // Classroom Settings Popover Toggle
       const settingsBtn = document.getElementById('settings-btn');
@@ -1948,7 +2572,14 @@
             alert(data.message || 'System state has been reset successfully!');
             
             // Clear current logs and reset panels
-            timelineContainer.innerHTML = '<div style="text-align: center; color: var(--text-muted); padding: 60px 0; font-style: italic;">Hit "Send Request" to trace the flow...</div>';
+            timelineContainer.innerHTML = `
+              <div class="timeline-empty-state">
+                <div>
+                  <strong>No scenario selected yet</strong>
+                  <span>Send a checkout request to build the expected service flow here.</span>
+                </div>
+              </div>
+            `;
             analyticsPanel.classList.remove('active');
             analyticsLogContainer.innerHTML = '';
             analyticsLogContainer.style.display = 'none';
@@ -1986,6 +2617,206 @@
       toggleExpandTechEl.addEventListener('change', applyClassroomToggles);
       applyClassroomToggles();
 
+      function queueStatus(queue) {
+        if (!queue.exists) {
+          return { className: "stopped", label: "Missing", meaning: "This queue has not been declared yet. Start all services once before the catch-up demo." };
+        }
+
+        if (queue.consumers === 0) {
+          return {
+            className: "stopped",
+            label: "No consumer",
+            meaning: queue.messagesReady > 0
+              ? "The service is stopped. RabbitMQ is keeping messages in this inbox."
+              : "The queue exists, but no running service is reading from it right now.",
+          };
+        }
+
+        if (queue.messagesReady > 0) {
+          return {
+            className: "waiting",
+            label: "Waiting",
+            meaning: "Messages are ready and waiting for the service to catch up.",
+          };
+        }
+
+        return {
+          className: "healthy",
+          label: "Flowing",
+          meaning: "The service is connected and no messages are waiting.",
+        };
+      }
+
+      function renderBrokerNotices(queues) {
+        const notices = [];
+        const stoppedQueues = queues.filter(queue => queue.exists && queue.consumers === 0);
+        const waitingQueues = queues.filter(queue => queue.messagesReady > 0);
+
+        if (waitingQueues.length > 0) {
+          notices.push({
+            type: "warning",
+            text: "RabbitMQ is holding messages until the matching service reads them.",
+          });
+        }
+
+        if (stoppedQueues.length > 0) {
+          notices.push({
+            type: "danger",
+            text: "A queue can exist even when its service is stopped. Look for Consumers = 0.",
+          });
+        }
+
+        if (lastDrainQueueName) {
+          notices.push({
+            type: "success",
+            text: `${QUEUE_DESCRIPTIONS[lastDrainQueueName]?.owner || lastDrainQueueName} caught up; its ready message count drained back to zero.`,
+          });
+        }
+
+        if (notices.length === 0) {
+          notices.push({
+            type: "success",
+            text: "All observed queues have active consumers and no waiting messages.",
+          });
+        }
+
+        brokerNoticesEl.innerHTML = notices.map(notice => `<div class="notice-item ${notice.type}">${notice.text}</div>`).join("");
+      }
+
+      function renderQueueCards(queues) {
+        queueGridEl.innerHTML = queues.map((queue) => {
+          const description = QUEUE_DESCRIPTIONS[queue.name] || { owner: queue.name, role: "Teaching queue" };
+          const status = queueStatus(queue);
+          const previousReady = previousQueueReadyCounts.get(queue.name) ?? queue.messagesReady;
+          const changedClass = queue.messagesReady > previousReady ? "changed" : "";
+          const drainedClass = previousReady > 0 && queue.messagesReady === 0 ? "drained" : "";
+
+          if (previousReady > 0 && queue.messagesReady === 0) {
+            lastDrainQueueName = queue.name;
+          }
+
+          return `
+            <article class="queue-card ${status.className} ${changedClass} ${drainedClass}">
+              <div class="queue-card-head">
+                <div>
+                  <div class="queue-owner">${description.owner}</div>
+                  <div class="queue-name">${queue.name}</div>
+                </div>
+                <span class="queue-state-pill">${status.label}</span>
+              </div>
+              <div class="queue-metrics">
+                <div class="queue-metric">
+                  <span>Ready</span>
+                  <strong>${queue.messagesReady}</strong>
+                </div>
+                <div class="queue-metric">
+                  <span>Unacked</span>
+                  <strong>${queue.messagesUnacknowledged}</strong>
+                </div>
+                <div class="queue-metric">
+                  <span>Consumers</span>
+                  <strong>${queue.consumers}</strong>
+                </div>
+              </div>
+              <div class="queue-meaning">${status.meaning}</div>
+              <div class="queue-meaning">${description.role}</div>
+            </article>
+          `;
+        }).join("");
+
+        queues.forEach(queue => previousQueueReadyCounts.set(queue.name, queue.messagesReady));
+      }
+
+      async function refreshBrokerQueues() {
+        try {
+          const response = await fetch("/_teacher/rabbitmq/queues");
+          const body = await response.json();
+
+          if (!response.ok) {
+            throw new Error(body.message || "RabbitMQ queue data unavailable");
+          }
+
+          const queues = body.queues || [];
+          const waitingCount = queues.filter(queue => queue.messagesReady > 0).length;
+
+          brokerApiStatusEl.textContent = "Connected";
+          brokerPollStatusEl.textContent = "Every 1s";
+          brokerLastRefreshEl.textContent = new Date(body.observedAt || Date.now()).toLocaleTimeString();
+          brokerWaitingCountEl.textContent = String(waitingCount);
+
+          renderQueueCards(queues);
+          renderBrokerNotices(queues);
+        } catch (error) {
+          brokerApiStatusEl.textContent = "Unavailable";
+          brokerPollStatusEl.textContent = "Paused";
+          queueGridEl.innerHTML = `<div class="notice-item danger">RabbitMQ queue data is unavailable: ${error.message}</div>`;
+          brokerNoticesEl.innerHTML = '<div class="notice-item danger">Check that RabbitMQ is running and the Management UI is available.</div>';
+        }
+      }
+
+      function ensureBrokerPolling() {
+        refreshBrokerQueues();
+
+        if (!brokerPollTimer) {
+          brokerPollTimer = setInterval(refreshBrokerQueues, 1000);
+        }
+      }
+
+      function fallbackCopyCommand(command) {
+        const textarea = document.createElement("textarea");
+        textarea.value = command;
+        textarea.setAttribute("readonly", "");
+        textarea.style.position = "fixed";
+        textarea.style.left = "-9999px";
+        textarea.style.top = "0";
+        document.body.appendChild(textarea);
+        textarea.focus();
+        textarea.select();
+
+        let copied = false;
+        try {
+          copied = document.execCommand("copy");
+        } finally {
+          document.body.removeChild(textarea);
+        }
+
+        return copied;
+      }
+
+      async function copyCommand(command) {
+        if (navigator.clipboard && window.isSecureContext) {
+          try {
+            await navigator.clipboard.writeText(command);
+            return true;
+          } catch (error) {
+            // Fall through to the legacy copy path below.
+          }
+        }
+
+        return fallbackCopyCommand(command);
+      }
+
+      document.querySelectorAll('.copy-command-btn').forEach(button => {
+        button.addEventListener('click', async () => {
+          const command = button.dataset.command;
+
+          if (await copyCommand(command)) {
+            button.textContent = "Copied";
+            setTimeout(() => { button.textContent = "Copy"; }, 1200);
+            return;
+          }
+
+          const codeEl = button.parentElement.querySelector("code");
+          const range = document.createRange();
+          range.selectNodeContents(codeEl);
+          const selection = window.getSelection();
+          selection.removeAllRanges();
+          selection.addRange(range);
+          button.textContent = "Copy failed";
+          setTimeout(() => { button.textContent = "Copy"; }, 1600);
+        });
+      });
+
       // Tab Logic
       document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.addEventListener('click', () => {
@@ -1993,6 +2824,10 @@
           document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
           btn.classList.add('active');
           document.getElementById(btn.dataset.target).classList.add('active');
+
+          if (btn.dataset.target === "broker-lab-tab") {
+            ensureBrokerPolling();
+          }
         });
       });
 
@@ -2340,9 +3175,6 @@
 
       form.addEventListener("submit", async (event) => {
         event.preventDefault();
-
-        // Switch to timeline tab automatically
-        document.querySelector('[data-target="timeline-tab"]').click();
 
         const payload = { userId: userIdEl.value.trim(), productId: productIdEl.value, quantity: Number(quantityEl.value) };
         submitButton.disabled = true;
