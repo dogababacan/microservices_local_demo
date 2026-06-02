@@ -60,6 +60,74 @@
       
       header { max-width: 1400px; margin: 0 auto; padding: 40px 24px 20px; }
       .lede { max-width: 800px; font-size: 1.1rem; }
+      .glossary-term {
+        display: inline-flex;
+        align-items: baseline;
+        gap: 4px;
+        position: relative;
+        white-space: nowrap;
+        vertical-align: baseline;
+      }
+      .glossary-help {
+        width: 15px;
+        height: 15px;
+        display: inline-grid;
+        place-items: center;
+        border: 1px solid rgba(96, 165, 250, 0.45);
+        border-radius: 999px;
+        background: rgba(59, 130, 246, 0.12);
+        color: #93c5fd;
+        font-family: 'Inter', sans-serif;
+        font-size: 10px;
+        font-weight: 700;
+        line-height: 15px;
+        cursor: help;
+        transform: translateY(-0.5px);
+      }
+      .glossary-help:focus-visible {
+        outline: 2px solid var(--primary);
+        outline-offset: 2px;
+      }
+      .glossary-tooltip {
+        display: none;
+      }
+      .glossary-floating-tooltip {
+        position: fixed;
+        z-index: 3000;
+        width: max-content;
+        max-width: min(320px, calc(100vw - 32px));
+        padding: 9px 10px;
+        border: 1px solid rgba(96, 165, 250, 0.28);
+        border-radius: 8px;
+        background: rgba(11, 15, 25, 0.98);
+        box-shadow: 0 12px 28px rgba(0,0,0,0.45);
+        color: var(--text-main);
+        font-size: 0.78rem;
+        font-weight: 400;
+        line-height: 1.4;
+        white-space: normal;
+        pointer-events: none;
+        opacity: 0;
+        transform: translateY(4px);
+        transition: opacity 0.14s ease, transform 0.14s ease;
+      }
+      .glossary-floating-tooltip.visible {
+        opacity: 1;
+        transform: translateY(0);
+      }
+      @media (max-width: 640px) {
+        .glossary-term {
+          white-space: normal;
+        }
+        .glossary-tooltip {
+          left: auto;
+          right: 0;
+        }
+        .glossary-tooltip::after {
+          left: auto;
+          right: 12px;
+        }
+      }
 
       main {
         max-width: 1400px;
@@ -165,7 +233,8 @@
       }
 
       .tabs {
-        display: flex;
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
         gap: 8px;
         margin-bottom: 24px;
         background: rgba(0,0,0,0.2);
@@ -174,12 +243,14 @@
         border: 1px solid var(--border);
       }
       .tab-btn {
-        flex: 1;
         background: transparent;
         border: none;
         color: var(--text-muted);
-        padding: 12px;
+        min-height: 44px;
+        padding: 10px 8px;
         font-weight: 500;
+        font-size: 0.92rem;
+        line-height: 1.2;
         cursor: pointer;
         border-radius: 8px;
       }
@@ -187,6 +258,17 @@
         background: var(--bg-panel-hover);
         color: #fff;
         box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      }
+      @media (max-width: 760px) {
+        .tabs {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+      @media (max-width: 420px) {
+        .tab-btn {
+          font-size: 0.84rem;
+          padding: 9px 6px;
+        }
       }
 
       .tab-pane { display: none; animation: fadeIn 0.3s ease forwards; }
@@ -915,7 +997,7 @@
         padding: 8px;
         min-height: 68px;
       }
-      .queue-metric span {
+      .queue-metric > span {
         display: block;
         color: var(--text-muted);
         font-size: 0.7rem;
@@ -1026,6 +1108,248 @@
       .notice-item.warning { border-left-color: var(--warning); }
       .notice-item.danger { border-left-color: var(--danger); }
       .notice-item.success { border-left-color: var(--success); }
+
+      /* Flow Guide */
+      .flow-guide {
+        display: grid;
+        gap: 18px;
+        container-type: inline-size;
+      }
+      .guide-shell {
+        display: grid;
+        grid-template-columns: minmax(190px, 240px) minmax(360px, 1fr);
+        gap: 16px;
+        align-items: start;
+      }
+      @container (max-width: 980px) {
+        .guide-shell {
+          grid-template-columns: 1fr;
+        }
+      }
+      .guide-selector {
+        display: grid;
+        gap: 8px;
+        position: sticky;
+        top: 16px;
+      }
+      @container (max-width: 980px) {
+        .guide-selector {
+          position: static;
+          grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        }
+      }
+      @container (max-width: 560px) {
+        .guide-selector {
+          grid-template-columns: 1fr;
+        }
+      }
+      .guide-flow-btn {
+        width: 100%;
+        border: 1px solid var(--border);
+        background: rgba(255,255,255,0.035);
+        color: var(--text-muted);
+        border-radius: 8px;
+        padding: 10px 11px;
+        text-align: left;
+        cursor: pointer;
+        display: grid;
+        gap: 3px;
+      }
+      .guide-flow-btn:hover,
+      .guide-flow-btn.active {
+        border-color: rgba(96,165,250,0.42);
+        background: rgba(59,130,246,0.1);
+        color: #fff;
+      }
+      .guide-flow-btn strong {
+        color: inherit;
+        font-size: 0.9rem;
+      }
+      .guide-flow-btn span {
+        color: var(--text-muted);
+        font-size: 0.76rem;
+        line-height: 1.35;
+      }
+      .guide-flow-canvas,
+      .guide-notes-panel {
+        background: rgba(0,0,0,0.22);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 14px;
+        min-width: 0;
+      }
+      .guide-flow-heading {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 12px;
+        padding-bottom: 12px;
+        margin-bottom: 12px;
+        border-bottom: 1px solid rgba(255,255,255,0.06);
+      }
+      .guide-flow-heading h3 {
+        margin-bottom: 4px;
+      }
+      .guide-flow-heading p {
+        margin: 0;
+        font-size: 0.88rem;
+      }
+      .guide-outcome-pill {
+        flex-shrink: 0;
+        border: 1px solid rgba(16,185,129,0.35);
+        background: rgba(16,185,129,0.08);
+        color: var(--success);
+        border-radius: 999px;
+        padding: 5px 9px;
+        font-size: 0.76rem;
+        font-weight: 700;
+      }
+      .guide-outcome-pill.cancelled,
+      .guide-outcome-pill.rejected,
+      .guide-outcome-pill.failed {
+        border-color: rgba(239,68,68,0.35);
+        background: rgba(239,68,68,0.08);
+        color: var(--danger);
+      }
+      .guide-outcome-pill.waiting {
+        border-color: rgba(245,158,11,0.35);
+        background: rgba(245,158,11,0.08);
+        color: var(--warning);
+      }
+      .guide-path {
+        display: grid;
+        gap: 10px;
+      }
+      .guide-step {
+        display: grid;
+        grid-template-columns: minmax(140px, 180px) minmax(0, 1fr);
+        gap: 12px;
+        align-items: stretch;
+      }
+      @container (max-width: 700px) {
+        .guide-step {
+          grid-template-columns: 1fr;
+          gap: 8px;
+        }
+        .guide-flow-heading {
+          flex-direction: column;
+        }
+        .guide-outcome-pill {
+          align-self: flex-start;
+        }
+      }
+      .guide-service-node {
+        border: 1px solid rgba(255,255,255,0.08);
+        background: rgba(15,23,42,0.72);
+        border-left: 3px solid var(--primary);
+        border-radius: 8px;
+        padding: 10px;
+        display: grid;
+        align-content: start;
+        gap: 5px;
+        min-height: 78px;
+      }
+      .guide-service-node.success { border-left-color: var(--success); }
+      .guide-service-node.warning { border-left-color: var(--warning); }
+      .guide-service-node.danger { border-left-color: var(--danger); }
+      .guide-service-node strong {
+        color: #fff;
+        font-family: 'Outfit', sans-serif;
+        font-size: 0.94rem;
+        line-height: 1.25;
+      }
+      .guide-service-node span {
+        color: var(--text-muted);
+        font-size: 0.78rem;
+        line-height: 1.35;
+      }
+      .guide-step-body {
+        border: 1px solid rgba(255,255,255,0.06);
+        border-radius: 8px;
+        background: rgba(255,255,255,0.025);
+        padding: 10px;
+        min-height: 78px;
+      }
+      .guide-step-title {
+        color: #fff;
+        font-weight: 600;
+        margin-bottom: 6px;
+      }
+      .guide-step-detail {
+        color: var(--text-muted);
+        font-size: 0.86rem;
+        line-height: 1.45;
+        overflow-wrap: anywhere;
+      }
+      .guide-chip-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-top: 9px;
+      }
+      .guide-event-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        max-width: 100%;
+        border: 1px solid rgba(245,158,11,0.28);
+        background: rgba(245,158,11,0.08);
+        color: var(--warning);
+        border-radius: 6px;
+        padding: 4px 7px;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.73rem;
+        overflow-wrap: anywhere;
+      }
+      .guide-event-chip.queue {
+        border-color: rgba(59,130,246,0.3);
+        background: rgba(59,130,246,0.08);
+        color: #93c5fd;
+      }
+      .guide-event-chip.stop,
+      .guide-event-chip.fail {
+        border-color: rgba(239,68,68,0.32);
+        background: rgba(239,68,68,0.08);
+        color: var(--danger);
+      }
+      .guide-notes-panel {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 10px;
+        grid-column: 2;
+      }
+      @container (max-width: 980px) {
+        .guide-notes-panel {
+          grid-column: auto;
+        }
+      }
+      @container (max-width: 560px) {
+        .guide-notes-panel {
+          grid-template-columns: 1fr;
+        }
+      }
+      .guide-note {
+        border-left: 3px solid var(--primary);
+        background: rgba(255,255,255,0.035);
+        border-radius: 0 8px 8px 0;
+        padding: 9px 10px;
+      }
+      .guide-note.warning { border-left-color: var(--warning); }
+      .guide-note.danger { border-left-color: var(--danger); }
+      .guide-note.success { border-left-color: var(--success); }
+      .guide-note strong {
+        display: block;
+        color: #fff;
+        margin-bottom: 3px;
+        font-size: 0.84rem;
+      }
+      .guide-note span {
+        display: block;
+        color: var(--text-muted);
+        font-size: 0.84rem;
+        line-height: 1.42;
+        overflow-wrap: anywhere;
+      }
 
       /* Because Line (Cause & Effect) */
       .because-card {
@@ -1536,8 +1860,8 @@
     <header>
       <h1>Checkout Event Demo</h1>
       <p class="lede">
-        An interactive, visual playground for event-driven microservices.
-        Send a <code>POST /checkout</code> request and watch RabbitMQ route events behind the scenes.
+        An interactive, visual playground for event-driven <span data-glossary="microservice">microservices</span>.
+        Send a <code>POST /checkout</code> request and watch <span data-glossary="rabbitmq">RabbitMQ</span> route events behind the scenes.
       </p>
     </header>
 
@@ -1596,13 +1920,13 @@
             <div style="display: flex; justify-content: space-between; align-items: center;">
               <div style="font-weight: 600; color: #fff; display: flex; align-items: center; gap: 6px; font-size: 0.95rem;">
                 <svg class="icon" viewBox="0 0 24 24" style="color: var(--warning);"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0zM12 9v4M12 17h.01"/></svg>
-                Async Note (Eventual Consistency)
+                Async Note (<span data-glossary="eventualConsistency">Eventual Consistency</span>)
               </div>
               <button type="button" id="btn-why-async" class="ctrl-btn" style="padding: 2px 8px; font-size: 0.72rem; margin: 0;">How is this possible?</button>
             </div>
             <div id="async-note-details" style="display: none; margin-top: 10px; border-top: 1px solid rgba(245, 158, 11, 0.15); padding-top: 8px; font-size: 0.85rem; line-height: 1.45;">
-              <p style="margin-bottom: 8px;">The HTTP checkout request returns a synchronous <code>202 Accepted</code> response immediately after the Order Service creates the initial record, confirming the request has been received.</p>
-              <p style="margin-bottom: 0;">However, downstream validation (such as payment processing or stock reservation) occurs asynchronously via RabbitMQ. If these downstream events fail, compensating transactions are triggered, which asynchronously cancel the order in the background, updating the Order Service record eventually.</p>
+              <p style="margin-bottom: 8px;">The <span data-glossary="http">HTTP</span> checkout request returns a <span data-glossary="synchronous">synchronous</span> <code>202 Accepted</code> response immediately after the Order Service creates the initial record, confirming the request has been received.</p>
+              <p style="margin-bottom: 0;">However, downstream validation (such as payment processing or stock reservation) occurs <span data-glossary="asynchronous">asynchronously</span> via <span data-glossary="rabbitmq">RabbitMQ</span>. If these downstream events fail, <span data-glossary="compensation">compensating transactions</span> are triggered, which asynchronously cancel the order in the background, updating the Order Service record eventually.</p>
             </div>
           </div>
           <pre id="response-output">Results will appear here...</pre>
@@ -1613,6 +1937,7 @@
       <div class="right-col">
         <div class="tabs">
           <button class="tab-btn active" data-target="timeline-tab">Expected Scenario Flow</button>
+          <button class="tab-btn" data-target="flow-guide-tab">Flow Guide</button>
           <button class="tab-btn" data-target="broker-lab-tab">Live Broker Lab</button>
           <button class="tab-btn" data-target="explorer-tab">Service Explorer</button>
         </div>
@@ -1646,7 +1971,7 @@
               </div>
             </div>
           </div>
-          <p>This is a guided visualization of the selected scenario, not live RabbitMQ tracing. Use the Live Broker Lab, RabbitMQ UI, and Docker logs to observe real queue behavior.</p>
+          <p>This is a guided visualization of the selected scenario, not live <span data-glossary="rabbitmq">RabbitMQ</span> tracing. Use the Live Broker Lab, RabbitMQ UI, and Docker logs to observe real <span data-glossary="queue">queue</span> behavior.</p>
 
           <details style="margin: 0 0 16px; border: 1px solid var(--border); border-radius: 12px; padding: 14px; background: rgba(0,0,0,0.22);">
             <summary style="cursor: pointer; font-weight: 600; color: #fff; font-family: 'Outfit', sans-serif;">Exercises (try these in class)</summary>
@@ -1707,7 +2032,7 @@
           <div id="routing-explainer" style="display: none; margin-bottom: 24px;">
             <div style="font-family: 'Outfit', sans-serif; font-weight: 600; color: #fff; margin-bottom: 4px; font-size: 1.05rem;">Routing & Inboxes (Example)</div>
             <div style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 12px;">
-              RabbitMQ routes one published event to multiple service inboxes based on the routing key binding.
+              <span data-glossary="rabbitmq">RabbitMQ</span> routes one published event to multiple service inboxes based on the <span data-glossary="routingKey">routing key</span> binding.
             </div>
             
             <div class="diagram-routing">
@@ -1864,12 +2189,36 @@
           </div>
         </section>
 
+        <!-- FLOW GUIDE TAB -->
+        <section id="flow-guide-tab" class="tab-pane">
+          <div class="flow-guide">
+            <div>
+              <h2>Interactive Event Flow Guide</h2>
+              <p>This tab is a classroom reference. Choose a flow to study the possible path without sending a request, stopping containers, or reading live <span data-glossary="rabbitmq">RabbitMQ</span> state. Analytics observes copies in parallel, so the guide focuses on the business path.</p>
+            </div>
+
+            <div class="guide-shell">
+              <nav id="guide-selector" class="guide-selector" aria-label="Flow guide scenarios">
+                <!-- Flow guide buttons are rendered by JavaScript. -->
+              </nav>
+
+              <div id="guide-flow-canvas" class="guide-flow-canvas">
+                <!-- Selected flow appears here. -->
+              </div>
+
+              <aside id="guide-notes-panel" class="guide-notes-panel">
+                <!-- Teaching notes appear here. -->
+              </aside>
+            </div>
+          </div>
+        </section>
+
         <!-- LIVE BROKER LAB TAB -->
         <section id="broker-lab-tab" class="tab-pane">
           <div class="broker-lab">
             <div>
               <h2>Live Broker Lab</h2>
-              <p>This panel reads real RabbitMQ queue state every second. Use it to show messages waiting while a service is stopped, then draining when the service starts again.</p>
+              <p>This panel reads real <span data-glossary="rabbitmq">RabbitMQ</span> <span data-glossary="queue">queue</span> state every second. Use it to show messages waiting while a <span data-glossary="service">service</span> is stopped, then draining when the service starts again.</p>
             </div>
 
             <div class="broker-status-strip">
@@ -1909,11 +2258,11 @@
                       <strong>readers</strong>
                     </div>
                   </div>
-                  <p style="margin-top: 10px; margin-bottom: 0;">Ready means messages are waiting in the service inbox. Unacked means a service has received messages but has not confirmed them yet. Consumers means running service instances currently reading from that queue.</p>
+                  <p style="margin-top: 10px; margin-bottom: 0;">Ready means messages are waiting in the service inbox. Unacked means a service has received messages but has not confirmed them yet. <span data-glossary="consumer">Consumers</span> means running service instances currently reading from that queue.</p>
                 </div>
                 <div class="broker-guide-card" style="margin-bottom: 12px;">
                   <h3>One queue, many consumers</h3>
-                  <p>Multiple consumers on the same queue are competing readers. RabbitMQ gives each message to one of them, so this is useful for scaling more instances of the same service.</p>
+                  <p>Multiple <span data-glossary="consumer">consumers</span> on the same <span data-glossary="queue">queue</span> are competing readers. <span data-glossary="rabbitmq">RabbitMQ</span> gives each message to one of them, so this is useful for scaling more instances of the same service.</p>
                   <div class="notice-list">
                     <div class="notice-item success"><code>notification_service_events_queue</code> with 2 consumers means two Notification Service instances can share notification work.</div>
                     <div class="notice-item warning">Do not put different services on one queue if both must see every event; they would split messages and miss some events.</div>
@@ -1980,7 +2329,7 @@
                   </div>
 
                   <h3 style="margin-top: 16px;">Order stopped</h3>
-                  <p>The first synchronous HTTP dependency is down, so checkout fails before any event is published.</p>
+                  <p>The first <span data-glossary="synchronous">synchronous</span> <span data-glossary="http">HTTP</span> dependency is down, so checkout fails before any event is published.</p>
                   <ol class="broker-step-list">
                     <li><b>1</b><span>Stop Order Service.</span></li>
                     <li><b>2</b><span>Send a checkout from the left form.</span></li>
@@ -2011,7 +2360,7 @@
 
                 <div class="broker-guide-card">
                   <h3>Source of truth</h3>
-                  <p>The Expected Scenario Flow explains what should happen. This tab shows what RabbitMQ is actually holding right now. Docker logs prove which service consumed the delayed event.</p>
+                  <p>The Expected Scenario Flow explains what should happen. This tab shows what <span data-glossary="rabbitmq">RabbitMQ</span> is actually holding right now. Docker logs prove which service consumed the delayed event.</p>
                 </div>
               </aside>
             </div>
@@ -2021,7 +2370,7 @@
         <!-- EXPLORER TAB -->
         <section id="explorer-tab" class="tab-pane">
           <h2>Educational Service Explorer</h2>
-          <p>Click on a service to see what it owns, what it publishes, and what it consumes.</p>
+          <p>Click on a <span data-glossary="service">service</span> to see what it owns, what it publishes, and what it consumes.</p>
           
           <div class="table-wrapper">
             <table class="responsibility-table">
@@ -2029,7 +2378,7 @@
                 <tr>
                   <th>Service</th>
                   <th>Main responsibility</th>
-                  <th>Talks via HTTP?</th>
+                  <th>HTTP communication</th>
                   <th>Publishes events</th>
                   <th>Consumes events</th>
                 </tr>
@@ -2098,9 +2447,9 @@
               <div class="accordion-content">
                 <div class="service-metadata">
                   <span class="meta-badge"><strong>Port:</strong> <code>3000</code></span>
-                  <span class="meta-badge"><strong>Style:</strong> HTTP Entry</span>
+                  <span class="meta-badge"><strong>Style:</strong> <span data-glossary="http">HTTP</span> Entry</span>
                   <span class="meta-badge"><strong>Endpoint:</strong> <code>POST /checkout</code></span>
-                  <span class="meta-badge"><strong>Calls:</strong> Order Service (HTTP)</span>
+                  <span class="meta-badge"><strong>Calls:</strong> Order Service (<span data-glossary="http">HTTP</span>)</span>
                 </div>
                 <div class="explorer-grid">
                   <div class="explorer-card card-owns">
@@ -2127,7 +2476,7 @@
                       Why this exists
                     </div>
                     <div class="explorer-card-body">
-                      Web clients need a clean, synchronous HTTP entry point. The Gateway maps this standard HTTP input into event-driven background flows.
+                      Web clients need a clean, <span data-glossary="synchronous">synchronous</span> <span data-glossary="http">HTTP</span> entry point. The Gateway maps this standard HTTP input into event-driven background flows.
                     </div>
                   </div>
                 </div>
@@ -2145,7 +2494,7 @@
               <div class="accordion-content">
                 <div class="service-metadata">
                   <span class="meta-badge"><strong>Port:</strong> <code>3001</code></span>
-                  <span class="meta-badge"><strong>Style:</strong> HTTP + RabbitMQ Topic Producer & Consumer</span>
+                  <span class="meta-badge"><strong>Style:</strong> <span data-glossary="http">HTTP</span> + <span data-glossary="rabbitmq">RabbitMQ</span> Topic <span data-glossary="publisher">Producer</span> & <span data-glossary="consumer">Consumer</span></span>
                   <span class="meta-badge"><strong>Publishes:</strong> <code>order.created</code>, <code>order.completed</code>, <code>order.cancelled</code></span>
                   <span class="meta-badge"><strong>Consumes:</strong> <code>payment.completed</code>, <code>inventory.failed</code>, <code>payment.failed</code></span>
                 </div>
@@ -2196,7 +2545,7 @@
               <div class="accordion-content">
                 <div class="service-metadata">
                   <span class="meta-badge"><strong>Port:</strong> <code>3002</code></span>
-                  <span class="meta-badge"><strong>Style:</strong> RabbitMQ Topic Consumer + Producer</span>
+                  <span class="meta-badge"><strong>Style:</strong> <span data-glossary="rabbitmq">RabbitMQ</span> Topic <span data-glossary="consumer">Consumer</span> + <span data-glossary="publisher">Producer</span></span>
                   <span class="meta-badge"><strong>Publishes:</strong> <code>inventory.reserved</code>, <code>inventory.failed</code>, <code>inventory.released</code></span>
                   <span class="meta-badge"><strong>Consumes:</strong> <code>order.created</code>, <code>inventory.release_requested</code></span>
                 </div>
@@ -2228,7 +2577,7 @@
                       <ul>
                         <li><code>inventory.reserved</code>: Locks stock for payment validation.</li>
                         <li><code>inventory.failed</code>: Rejects booking due to zero stock.</li>
-                        <li><code>inventory.released</code>: Restores stock after payment fails (compensation).</li>
+                        <li><code>inventory.released</code>: Restores stock after payment fails (<span data-glossary="compensation">compensation</span>).</li>
                       </ul>
                     </div>
                   </div>
@@ -2247,7 +2596,7 @@
               <div class="accordion-content">
                 <div class="service-metadata">
                   <span class="meta-badge"><strong>Port:</strong> <code>3003</code></span>
-                  <span class="meta-badge"><strong>Style:</strong> RabbitMQ Topic Consumer + Producer</span>
+                  <span class="meta-badge"><strong>Style:</strong> <span data-glossary="rabbitmq">RabbitMQ</span> Topic <span data-glossary="consumer">Consumer</span> + <span data-glossary="publisher">Producer</span></span>
                   <span class="meta-badge"><strong>Publishes:</strong> <code>payment.completed</code>, <code>payment.failed</code>, <code>inventory.release_requested</code></span>
                   <span class="meta-badge"><strong>Consumes:</strong> <code>inventory.reserved</code></span>
                 </div>
@@ -2279,7 +2628,7 @@
                       <ul>
                         <li><code>payment.completed</code>: Notifies order checkout is successful.</li>
                         <li><code>payment.failed</code>: Reports card declined exceptions.</li>
-                        <li><code>inventory.release_requested</code>: Requests compensation stock restore since payment failed.</li>
+                        <li><code>inventory.release_requested</code>: Requests <span data-glossary="compensation">compensation</span> stock restore since payment failed.</li>
                       </ul>
                     </div>
                   </div>
@@ -2298,7 +2647,7 @@
               <div class="accordion-content">
                 <div class="service-metadata">
                   <span class="meta-badge"><strong>Port:</strong> <code>3004</code></span>
-                  <span class="meta-badge"><strong>Style:</strong> RabbitMQ Topic Consumer Only</span>
+                  <span class="meta-badge"><strong>Style:</strong> <span data-glossary="rabbitmq">RabbitMQ</span> Topic <span data-glossary="consumer">Consumer</span> Only</span>
                   <span class="meta-badge"><strong>Consumes:</strong> <code>payment.completed</code>, <code>payment.failed</code>, <code>inventory.failed</code></span>
                 </div>
                 <div class="explorer-grid">
@@ -2344,7 +2693,7 @@
               <div class="accordion-content">
                 <div class="service-metadata">
                   <span class="meta-badge"><strong>Port:</strong> <code>3005</code></span>
-                  <span class="meta-badge"><strong>Style:</strong> RabbitMQ Global Consumer (Wiretap)</span>
+                  <span class="meta-badge"><strong>Style:</strong> <span data-glossary="rabbitmq">RabbitMQ</span> Global <span data-glossary="consumer">Consumer</span> (Wiretap)</span>
                   <span class="meta-badge"><strong>Consumes:</strong> <code>#</code> (All events wild card)</span>
                 </div>
                 <div class="explorer-grid">
@@ -2372,7 +2721,7 @@
                       Why this exists
                     </div>
                     <div class="explorer-card-body">
-                      Demonstrates adding a global monitoring system using topic routing wildcards without requiring code changes in publishers.
+                      Demonstrates adding a global monitoring system using topic <span data-glossary="routingKey">routing</span> wildcards without requiring code changes in <span data-glossary="publisher">publishers</span>.
                     </div>
                   </div>
                 </div>
@@ -2400,7 +2749,7 @@
                       Main Role
                     </div>
                     <div class="explorer-card-body">
-                      Decouples microservices. Receives events from publishers and routes copies to queues according to configured binding patterns.
+                      Decouples <span data-glossary="microservice">microservices</span>. Receives events from <span data-glossary="publisher">publishers</span> and routes copies to <span data-glossary="queue">queues</span> according to configured binding patterns.
                     </div>
                   </div>
                   <div class="explorer-card card-why">
@@ -2409,7 +2758,7 @@
                       Why topic routing?
                     </div>
                     <div class="explorer-card-body">
-                      Enables precise point-to-point routing, event stream splitting, and global auditing wiretaps within a single centralized broker.
+                      Enables precise point-to-point <span data-glossary="routingKey">routing</span>, event stream splitting, and global auditing wiretaps within a single centralized broker.
                     </div>
                   </div>
                 </div>
@@ -2419,10 +2768,10 @@
 
           <h3>Code Map</h3>
           <ul style="color: var(--text-muted); font-size: 0.95rem;">
-            <li><code>src/index.js</code>: HTTP server / main behavior</li>
+            <li><code>src/index.js</code>: <span data-glossary="http">HTTP</span> server / main behavior</li>
             <li><code>src/rabbitmq.js</code>: AMQP connect/publish/consume helpers</li>
             <li><code>Dockerfile</code>: Container instructions</li>
-            <li><code>docker-compose.yml</code>: Orchestrates all services & RabbitMQ</li>
+            <li><code>docker-compose.yml</code>: Orchestrates all <span data-glossary="service">services</span> & <span data-glossary="rabbitmq">RabbitMQ</span></li>
           </ul>
         </section>
       </div>
@@ -2467,6 +2816,13 @@
       const brokerLastRefreshEl = document.getElementById('broker-last-refresh');
       const brokerWaitingCountEl = document.getElementById('broker-waiting-count');
       const brokerNoticesEl = document.getElementById('broker-notices');
+      const guideSelectorEl = document.getElementById('guide-selector');
+      const guideFlowCanvasEl = document.getElementById('guide-flow-canvas');
+      const guideNotesPanelEl = document.getElementById('guide-notes-panel');
+      const glossaryFloatingTooltipEl = document.createElement('div');
+      glossaryFloatingTooltipEl.className = 'glossary-floating-tooltip';
+      glossaryFloatingTooltipEl.setAttribute('role', 'tooltip');
+      document.body.appendChild(glossaryFloatingTooltipEl);
       
       let currentView = 'beginner'; 
       let currentCorrelationId = 'corr_XXXX';
@@ -2478,10 +2834,155 @@
       let previousQueueReadyCounts = new Map();
       let lastDrainQueueName = null;
 
+      const GLOSSARY_DEFINITIONS = {
+        apiGateway: "The API Gateway is the front door of the system. Clients call it instead of calling every internal service directly.",
+        asynchronous: "Asynchronous work continues after the first response. A service can publish a message now and another service can process it later.",
+        choreography: "Choreography means each service reacts to events and publishes the next event. No central workflow service tells everyone what to do.",
+        compensation: "Compensation is an undo action for a previous step, such as releasing stock after payment fails.",
+        consumer: "A consumer is a running service instance that reads messages from a queue.",
+        correlationId: "A correlation ID connects logs and events that belong to the same user request.",
+        eventualConsistency: "Eventual consistency means different services may briefly show different states, but they settle after background events finish.",
+        exchange: "A RabbitMQ exchange receives published messages and routes copies to matching queues.",
+        http: "HTTP is the request/response protocol browsers and APIs commonly use for synchronous calls.",
+        microservice: "A microservice is a small independently running service that owns a focused business capability.",
+        orchestrator: "An orchestrator is a service or workflow engine that decides the next step in a multi-service process.",
+        publisher: "A publisher is code that sends a message or event to the broker.",
+        queue: "A queue is a service inbox. Messages wait there until a consumer reads and acknowledges them.",
+        rabbitmq: "RabbitMQ is the message broker in this demo. It stores and routes messages between services.",
+        readyMessages: "Ready messages are waiting in the queue and have not been delivered to a consumer yet.",
+        routingKey: "A routing key is the label RabbitMQ uses to decide which queues should receive a message.",
+        service: "A service is a separately running part of the system with its own responsibility.",
+        synchronous: "Synchronous work waits for an immediate answer before continuing, such as API Gateway calling Order Service over HTTP.",
+        unackedMessages: "Unacked messages have been delivered to a consumer, but the consumer has not confirmed successful processing yet.",
+      };
+
+      function escapeHtml(value) {
+        return String(value)
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;")
+          .replaceAll("'", "&#39;");
+      }
+
+      function glossary(termKey, labelOverride) {
+        const definition = GLOSSARY_DEFINITIONS[termKey];
+        const label = labelOverride || termKey;
+
+        if (!definition) {
+          return escapeHtml(label);
+        }
+
+        return `
+          <span class="glossary-term">
+            <span>${escapeHtml(label)}</span>
+            <span class="glossary-help" tabindex="0" role="button" aria-label="${escapeHtml(label)} definition" data-definition="${escapeHtml(definition)}">?</span>
+            <span class="glossary-tooltip" role="tooltip">${escapeHtml(definition)}</span>
+          </span>
+        `;
+      }
+
+      function positionGlossaryTooltip(trigger) {
+        const definition = trigger.dataset.definition;
+        if (!definition) return;
+
+        glossaryFloatingTooltipEl.textContent = definition;
+        glossaryFloatingTooltipEl.classList.add('visible');
+        glossaryFloatingTooltipEl.style.left = '0px';
+        glossaryFloatingTooltipEl.style.top = '0px';
+
+        const triggerRect = trigger.getBoundingClientRect();
+        const tooltipRect = glossaryFloatingTooltipEl.getBoundingClientRect();
+        const margin = 12;
+        const preferredTop = triggerRect.top - tooltipRect.height - 8;
+        const top = preferredTop >= margin ? preferredTop : triggerRect.bottom + 8;
+        const left = Math.min(
+          Math.max(margin, triggerRect.left + (triggerRect.width / 2) - (tooltipRect.width / 2)),
+          window.innerWidth - tooltipRect.width - margin
+        );
+
+        glossaryFloatingTooltipEl.style.left = `${left}px`;
+        glossaryFloatingTooltipEl.style.top = `${Math.max(margin, top)}px`;
+      }
+
+      function hideGlossaryTooltip() {
+        glossaryFloatingTooltipEl.classList.remove('visible');
+      }
+
+      document.addEventListener('mouseover', (event) => {
+        const trigger = event.target.closest?.('.glossary-help');
+        if (trigger) positionGlossaryTooltip(trigger);
+      });
+
+      document.addEventListener('mouseout', (event) => {
+        if (event.target.closest?.('.glossary-help')) {
+          hideGlossaryTooltip();
+        }
+      });
+
+      document.addEventListener('focusin', (event) => {
+        const trigger = event.target.closest?.('.glossary-help');
+        if (trigger) positionGlossaryTooltip(trigger);
+      });
+
+      document.addEventListener('focusout', (event) => {
+        if (event.target.closest?.('.glossary-help')) {
+          hideGlossaryTooltip();
+        }
+      });
+
+      document.addEventListener('click', (event) => {
+        const trigger = event.target.closest?.('.glossary-help');
+        if (trigger) {
+          event.preventDefault();
+          positionGlossaryTooltip(trigger);
+          return;
+        }
+
+        hideGlossaryTooltip();
+      });
+
+      window.addEventListener('scroll', hideGlossaryTooltip, true);
+      window.addEventListener('resize', hideGlossaryTooltip);
+
+      function hydrateStaticGlossaryTerms() {
+        document.querySelectorAll("[data-glossary]").forEach((element) => {
+          const termKey = element.dataset.glossary;
+          const label = element.textContent.trim();
+          element.outerHTML = glossary(termKey, label);
+        });
+      }
+
+      hydrateStaticGlossaryTerms();
+
+      function glossaryServiceName(serviceName) {
+        if (serviceName === "API Gateway") {
+          return glossary("apiGateway", serviceName);
+        }
+
+        if (serviceName && serviceName.includes("Service")) {
+          return glossary("service", serviceName);
+        }
+
+        return escapeHtml(serviceName);
+      }
+
+      function glossaryTechnicalKey(key) {
+        const keyMap = {
+          exchange: ["exchange", "exchange"],
+          queue: ["queue", "queue"],
+          routingKey: ["routingKey", "routingKey"],
+          type: ["http", "type"],
+          to: ["service", "to"],
+        };
+        const match = keyMap[key];
+        return match ? glossary(match[0], match[1]) : escapeHtml(key);
+      }
+
       const QUEUE_DESCRIPTIONS = {
         notification_service_events_queue: {
           owner: "Notification Service",
-          role: "Customer messages wait here when Notification Service is stopped.",
+          role: `Customer messages wait here when Notification Service is stopped. This is a ${glossary("queue")}.`,
         },
         analytics_service_events_queue: {
           owner: "Analytics Service",
@@ -2489,11 +2990,11 @@
         },
         order_service_payment_completed_queue: {
           owner: "Order Service",
-          role: "Payment success arrives here so orders can become completed.",
+          role: `Payment success arrives here so orders can become completed by a ${glossary("consumer")}.`,
         },
         order_service_checkout_failed_queue: {
           owner: "Order Service",
-          role: "Inventory and payment failures arrive here so orders can be cancelled.",
+          role: "Inventory and payment failure events arrive here so orders can be cancelled.",
         },
         inventory_service_order_created_queue: {
           owner: "Inventory Service",
@@ -2501,11 +3002,143 @@
         },
         inventory_service_release_requested_queue: {
           owner: "Inventory Service",
-          role: "Compensation requests wait here after payment failure.",
+          role: `${glossary("compensation", "Compensation")} requests wait here after payment failure.`,
         },
         payment_service_inventory_reserved_queue: {
           owner: "Payment Service",
           role: "Reserved inventory events arrive here before payment is attempted.",
+        },
+      };
+
+      const GUIDE_FLOWS = {
+        success: {
+          title: "Successful Checkout",
+          short: "created -> completed",
+          outcome: "completed",
+          outcomeClass: "success",
+          summary: "The order is accepted, stock is reserved, payment succeeds, and Order Service marks the order completed.",
+          steps: [
+            { service: "API Gateway", tone: "success", title: "Synchronous entry", detail: "Receives the checkout request and calls Order Service over HTTP.", chips: [{ label: "POST /checkout", type: "queue" }] },
+            { service: "Order Service", tone: "success", title: "Order is created", detail: "Creates the order record and publishes the first message for the background flow.", chips: [{ label: "order.created" }] },
+            { service: "Inventory Service", tone: "success", title: "Stock is reserved", detail: "Consumes order.created, checks stock, then announces the reservation.", chips: [{ label: "inventory.reserved" }] },
+            { service: "Payment Service", tone: "success", title: "Payment succeeds", detail: "Consumes inventory.reserved and publishes the successful payment result.", chips: [{ label: "payment.completed" }] },
+            { service: "Order Service", tone: "success", title: "Order completes", detail: "Consumes payment.completed and records the final successful order state.", chips: [{ label: "order.completed" }] },
+            { service: "Notification Service", tone: "success", title: "Customer message", detail: "Consumes payment.completed and prints the confirmation message.", chips: [{ label: "payment.completed" }] },
+          ],
+          notes: [
+            { title: "What starts it", text: "API Gateway makes one synchronous call to Order Service.", type: "" },
+            { title: "What RabbitMQ holds", text: "RabbitMQ routes copies of payment.completed to both Order Service and Notification Service; exact log order can vary.", type: "" },
+            { title: "Final state", text: "Order status becomes completed and pencil stock decreases.", type: "success" },
+          ],
+        },
+        outOfStock: {
+          title: "Out Of Stock",
+          short: "created -> cancelled",
+          outcome: "cancelled",
+          outcomeClass: "cancelled",
+          summary: "The order is created first, but Inventory Service rejects it because stock is unavailable.",
+          steps: [
+            { service: "API Gateway", tone: "success", title: "Request accepted", detail: "The initial request is valid, so Order Service can create an order.", chips: [{ label: "POST /checkout", type: "queue" }] },
+            { service: "Order Service", tone: "success", title: "Order is created", detail: "Publishes order.created even though inventory has not checked stock yet.", chips: [{ label: "order.created" }] },
+            { service: "Inventory Service", tone: "danger", title: "Stock check fails", detail: "Consumes order.created and publishes the failure because the product is out of stock.", chips: [{ label: "inventory.failed", type: "fail" }] },
+            { service: "Order Service", tone: "danger", title: "Order is cancelled", detail: "Consumes the failure and changes the order lifecycle to cancelled.", chips: [{ label: "order.cancelled", type: "fail" }] },
+            { service: "Notification Service", tone: "danger", title: "Customer message", detail: "Consumes inventory.failed and prints the out-of-stock message.", chips: [{ label: "inventory.failed", type: "fail" }] },
+          ],
+          notes: [
+            { title: "What starts it", text: "The request can still be accepted because stock validation is downstream.", type: "" },
+            { title: "What fails", text: "Inventory publishes inventory.failed; Order Service cancels and Notification Service reports it from separate queue copies.", type: "danger" },
+            { title: "Final state", text: "Order status becomes cancelled and stock does not change.", type: "danger" },
+          ],
+        },
+        paymentFailure: {
+          title: "Payment Failure + Compensation",
+          short: "created -> cancelled, stock restored",
+          outcome: "cancelled + stock restored",
+          outcomeClass: "cancelled",
+          summary: "Inventory reserves stock, payment fails, and a compensation message asks Inventory to release the stock.",
+          steps: [
+            { service: "API Gateway", tone: "success", title: "Request accepted", detail: "Creates the same initial order as the success path.", chips: [{ label: "POST /checkout", type: "queue" }] },
+            { service: "Order Service", tone: "success", title: "Order is created", detail: "Publishes order.created to begin downstream processing.", chips: [{ label: "order.created" }] },
+            { service: "Inventory Service", tone: "success", title: "Stock is reserved", detail: "Stock is temporarily held for this order.", chips: [{ label: "inventory.reserved" }] },
+            { service: "Payment Service", tone: "danger", title: "Payment fails", detail: "Publishes payment.failed and also asks Inventory to undo the reservation.", chips: [{ label: "payment.failed", type: "fail" }, { label: "inventory.release_requested", type: "queue" }] },
+            { service: "Order Service", tone: "danger", title: "Order is cancelled", detail: "Consumes payment.failed and records that checkout cannot finish.", chips: [{ label: "order.cancelled", type: "fail" }] },
+            { service: "Notification Service", tone: "danger", title: "Failure message", detail: "Consumes payment.failed and prints the payment failure message.", chips: [{ label: "payment.failed", type: "fail" }] },
+            { service: "Inventory Service", tone: "warning", title: "Stock is released", detail: `Consumes release_requested and performs ${glossary("compensation")} by adding stock back.`, chips: [{ label: "inventory.released", type: "queue" }] },
+          ],
+          notes: [
+            { title: "What RabbitMQ holds", text: "The release request waits in Inventory Service's queue if Inventory is not ready.", type: "warning" },
+            { title: "Parallel reactions", text: "Order cancellation, notification, and stock release are independent reactions; their log order can vary.", type: "warning" },
+            { title: "Final state", text: "Order status becomes cancelled and stock returns to its original value.", type: "danger" },
+          ],
+        },
+        invalid: {
+          title: "Invalid Request",
+          short: "rejected before events",
+          outcome: "rejected",
+          outcomeClass: "rejected",
+          summary: "API Gateway rejects malformed input before the order workflow begins.",
+          steps: [
+            { service: "API Gateway", tone: "danger", title: "Validation fails", detail: "The request is rejected immediately with 400 because required input is invalid.", chips: [{ label: "400 Bad Request", type: "fail" }] },
+            { service: "Order Service", tone: "warning", title: "Not called", detail: "Order Service does not create an order, so there is no order lifecycle.", chips: [{ label: "no order", type: "stop" }] },
+            { service: "RabbitMQ", tone: "warning", title: "No message exists", detail: "No message is published because the request failed before the workflow began.", chips: [{ label: "no queue buildup", type: "stop" }] },
+          ],
+          notes: [
+            { title: "What starts it", text: "Nothing starts beyond API Gateway validation.", type: "danger" },
+            { title: "What RabbitMQ holds", text: "RabbitMQ holds nothing because no message was published.", type: "warning" },
+            { title: "Final state", text: "No order exists and no stock changes.", type: "danger" },
+          ],
+        },
+        notificationStopped: {
+          title: "Notification Service Stopped",
+          short: "checkout completes, message waits",
+          outcome: "completed + notification waits",
+          outcomeClass: "waiting",
+          summary: "The business flow completes, but the customer notification waits until Notification Service returns.",
+          steps: [
+            { service: "Order Service", tone: "success", title: "Order completes", detail: "The order can still reach completed because Notification Service is not needed to complete checkout.", chips: [{ label: "order.completed" }] },
+            { service: "RabbitMQ", tone: "warning", title: "Notification queue waits", detail: "RabbitMQ keeps payment.completed in the Notification Service queue while there are zero consumers.", chips: [{ label: "notification_service_events_queue", type: "queue" }] },
+            { service: "Notification Service", tone: "warning", title: "Catches up after restart", detail: "When the service starts again, it consumes the waiting message and prints the delayed notification.", chips: [{ label: "Consumers: 1", type: "queue" }] },
+          ],
+          notes: [
+            { title: "What completes", text: "Order status can still become completed.", type: "success" },
+            { title: "What RabbitMQ holds", text: "Only the notification message waits.", type: "warning" },
+            { title: "What students should notice", text: "Stopped downstream observers do not necessarily block the business transaction.", type: "" },
+          ],
+        },
+        inventoryStopped: {
+          title: "Inventory Service Stopped",
+          short: "order stays created, then resumes",
+          outcome: "waiting -> completed",
+          outcomeClass: "waiting",
+          summary: "Order Service creates the order, but the flow pauses because Inventory Service is the next event consumer.",
+          steps: [
+            { service: "Order Service", tone: "success", title: "Order is created", detail: "Order Service publishes order.created and returns the accepted response.", chips: [{ label: "order.created" }] },
+            { service: "RabbitMQ", tone: "warning", title: "Inventory queue waits", detail: "The message waits in Inventory Service's queue because there are zero consumers.", chips: [{ label: "inventory_service_order_created_queue", type: "queue" }] },
+            { service: "Order Service", tone: "warning", title: "Order remains created", detail: "The order exists but cannot complete until inventory reserves or fails stock.", chips: [{ label: "status: created", type: "queue" }] },
+            { service: "Inventory Service", tone: "success", title: "Flow resumes", detail: "After restart, Inventory consumes order.created and the normal inventory/payment/order completion path continues.", chips: [{ label: "inventory.reserved" }] },
+          ],
+          notes: [
+            { title: "What starts it", text: "The order is still created because the first synchronous dependency is alive.", type: "" },
+            { title: "What RabbitMQ holds", text: "The order.created message waits in the inventory queue.", type: "warning" },
+            { title: "What students should notice", text: "The workflow continues from the queued message after restart.", type: "success" },
+          ],
+        },
+        orderStopped: {
+          title: "Order Service Stopped",
+          short: "HTTP fails, no event exists",
+          outcome: "502 failed",
+          outcomeClass: "failed",
+          summary: "The first synchronous dependency is down, so the workflow fails before any order or RabbitMQ message exists.",
+          steps: [
+            { service: "API Gateway", tone: "danger", title: "HTTP call fails", detail: "API Gateway tries to call Order Service over HTTP and receives no service response.", chips: [{ label: "502 unavailable", type: "fail" }] },
+            { service: "Order Service", tone: "danger", title: "No order is created", detail: "Because Order Service is stopped, it cannot create or publish anything.", chips: [{ label: "no order", type: "stop" }] },
+            { service: "RabbitMQ", tone: "warning", title: "No queue buildup", detail: "RabbitMQ cannot hold a message that was never published.", chips: [{ label: "no order.created", type: "stop" }] },
+          ],
+          notes: [
+            { title: "What starts it", text: "Nothing starts because the synchronous entry dependency is unavailable.", type: "danger" },
+            { title: "What RabbitMQ holds", text: "Nothing. No order.created message exists.", type: "warning" },
+            { title: "What students should notice", text: "Not every stopped service behaves the same; service position matters.", type: "" },
+          ],
         },
       };
 
@@ -2617,9 +3250,13 @@
       toggleExpandTechEl.addEventListener('change', applyClassroomToggles);
       applyClassroomToggles();
 
-      function queueStatus(queue) {
+      function queueCardTerm(cardIndex, termKey, label) {
+        return cardIndex === 0 ? glossary(termKey, label) : escapeHtml(label);
+      }
+
+      function queueStatus(queue, cardIndex) {
         if (!queue.exists) {
-          return { className: "stopped", label: "Missing", meaning: "This queue has not been declared yet. Start all services once before the catch-up demo." };
+          return { className: "stopped", label: "Missing", meaning: `This ${glossary("queue")} has not been declared yet. Start all services once before the catch-up demo.` };
         }
 
         if (queue.consumers === 0) {
@@ -2627,8 +3264,8 @@
             className: "stopped",
             label: "No consumer",
             meaning: queue.messagesReady > 0
-              ? "The service is stopped. RabbitMQ is keeping messages in this inbox."
-              : "The queue exists, but no running service is reading from it right now.",
+              ? `The ${queueCardTerm(cardIndex, "service", "service")} is stopped. ${glossary("rabbitmq", "RabbitMQ")} is keeping messages in this inbox.`
+              : `The ${glossary("queue")} exists, but no running ${queueCardTerm(cardIndex, "service", "service")} is reading from it right now.`,
           };
         }
 
@@ -2636,14 +3273,14 @@
           return {
             className: "waiting",
             label: "Waiting",
-            meaning: "Messages are ready and waiting for the service to catch up.",
+            meaning: `Messages are ready and waiting for the ${queueCardTerm(cardIndex, "service", "service")} to catch up.`,
           };
         }
 
         return {
           className: "healthy",
           label: "Flowing",
-          meaning: "The service is connected and no messages are waiting.",
+          meaning: `The ${queueCardTerm(cardIndex, "service", "service")} is connected and no messages are waiting.`,
         };
       }
 
@@ -2655,14 +3292,14 @@
         if (waitingQueues.length > 0) {
           notices.push({
             type: "warning",
-            text: "RabbitMQ is holding messages until the matching service reads them.",
+            text: `${glossary("rabbitmq", "RabbitMQ")} is holding messages until the matching ${glossary("service")} reads them.`,
           });
         }
 
         if (stoppedQueues.length > 0) {
           notices.push({
             type: "danger",
-            text: "A queue can exist even when its service is stopped. Look for Consumers = 0.",
+            text: `A ${glossary("queue")} can exist even when its ${glossary("service")} is stopped. Look for ${glossary("consumer", "Consumers")} = 0.`,
           });
         }
 
@@ -2676,17 +3313,21 @@
         if (notices.length === 0) {
           notices.push({
             type: "success",
-            text: "All observed queues have active consumers and no waiting messages.",
+            text: `All observed ${glossary("queue", "queues")} have active ${glossary("consumer", "consumers")} and no waiting messages.`,
           });
         }
 
         brokerNoticesEl.innerHTML = notices.map(notice => `<div class="notice-item ${notice.type}">${notice.text}</div>`).join("");
       }
 
+      function queueMetricLabel(cardIndex, termKey, label) {
+        return cardIndex === 0 ? glossary(termKey, label) : escapeHtml(label);
+      }
+
       function renderQueueCards(queues) {
-        queueGridEl.innerHTML = queues.map((queue) => {
+        queueGridEl.innerHTML = queues.map((queue, index) => {
           const description = QUEUE_DESCRIPTIONS[queue.name] || { owner: queue.name, role: "Teaching queue" };
-          const status = queueStatus(queue);
+          const status = queueStatus(queue, index);
           const previousReady = previousQueueReadyCounts.get(queue.name) ?? queue.messagesReady;
           const changedClass = queue.messagesReady > previousReady ? "changed" : "";
           const drainedClass = previousReady > 0 && queue.messagesReady === 0 ? "drained" : "";
@@ -2706,15 +3347,15 @@
               </div>
               <div class="queue-metrics">
                 <div class="queue-metric">
-                  <span>Ready</span>
+                  <span>${queueMetricLabel(index, "readyMessages", "Ready")}</span>
                   <strong>${queue.messagesReady}</strong>
                 </div>
                 <div class="queue-metric">
-                  <span>Unacked</span>
+                  <span>${queueMetricLabel(index, "unackedMessages", "Unacked")}</span>
                   <strong>${queue.messagesUnacknowledged}</strong>
                 </div>
                 <div class="queue-metric">
-                  <span>Consumers</span>
+                  <span>${queueMetricLabel(index, "consumer", "Consumers")}</span>
                   <strong>${queue.consumers}</strong>
                 </div>
               </div>
@@ -2726,6 +3367,85 @@
 
         queues.forEach(queue => previousQueueReadyCounts.set(queue.name, queue.messagesReady));
       }
+
+      function guideEventChip(chip) {
+        const type = chip.type ? ` ${chip.type}` : "";
+        return `<span class="guide-event-chip${type}">${escapeHtml(chip.label)}</span>`;
+      }
+
+      function guideNode(step) {
+        const tone = step.tone || "";
+        const chips = (step.chips || []).map(guideEventChip).join("");
+
+        return `
+          <article class="guide-step">
+            <div class="guide-service-node ${tone}">
+              <strong>${escapeHtml(step.service)}</strong>
+              <span>${escapeHtml(step.title)}</span>
+            </div>
+            <div class="guide-step-body">
+              <div class="guide-step-title">${escapeHtml(step.title)}</div>
+              <div class="guide-step-detail">${step.detail}</div>
+              ${chips ? `<div class="guide-chip-row">${chips}</div>` : ""}
+            </div>
+          </article>
+        `;
+      }
+
+      function guideTeachingNotes(flow) {
+        return flow.notes.map(note => `
+          <div class="guide-note ${note.type || ""}">
+            <strong>${escapeHtml(note.title)}</strong>
+            <span>${note.text}</span>
+          </div>
+        `).join("");
+      }
+
+      function renderGuideFlow(flowKey) {
+        const flow = GUIDE_FLOWS[flowKey] || GUIDE_FLOWS.success;
+
+        document.querySelectorAll('.guide-flow-btn').forEach(button => {
+          button.classList.toggle('active', button.dataset.flowKey === flowKey);
+        });
+
+        guideFlowCanvasEl.innerHTML = `
+          <div class="guide-flow-heading">
+            <div>
+              <h3>${escapeHtml(flow.title)}</h3>
+              <p>${escapeHtml(flow.summary)}</p>
+            </div>
+            <span class="guide-outcome-pill ${flow.outcomeClass}">${escapeHtml(flow.outcome)}</span>
+          </div>
+          <div class="guide-path">
+            ${flow.steps.map(guideNode).join("")}
+          </div>
+        `;
+
+        guideNotesPanelEl.innerHTML = `
+          <div class="guide-note">
+            <strong>How to use this guide</strong>
+            <span>This is an explanation-only view. It does not send requests and does not read live broker state.</span>
+          </div>
+          ${guideTeachingNotes(flow)}
+        `;
+      }
+
+      function initializeFlowGuide() {
+        guideSelectorEl.innerHTML = Object.entries(GUIDE_FLOWS).map(([key, flow]) => `
+          <button type="button" class="guide-flow-btn" data-flow-key="${escapeHtml(key)}">
+            <strong>${escapeHtml(flow.title)}</strong>
+            <span>${escapeHtml(flow.short)}</span>
+          </button>
+        `).join("");
+
+        guideSelectorEl.querySelectorAll('.guide-flow-btn').forEach(button => {
+          button.addEventListener('click', () => renderGuideFlow(button.dataset.flowKey));
+        });
+
+        renderGuideFlow('success');
+      }
+
+      initializeFlowGuide();
 
       async function refreshBrokerQueues() {
         try {
@@ -3102,12 +3822,12 @@
           </div>
         `;
         
-        const techDetails = step.technicalDetails ? Object.entries(step.technicalDetails).map(([k,v]) => `<li><strong>${k}:</strong> ${v}</li>`).join('') : '';
+        const techDetails = step.technicalDetails ? Object.entries(step.technicalDetails).map(([k,v]) => `<li><strong>${glossaryTechnicalKey(k)}:</strong> ${escapeHtml(v)}</li>`).join('') : '';
         const techHtml = `
           <div class="content-technical" style="display: ${currentView === 'technical' ? 'block' : 'none'};">
             <p style="color: var(--text-main); margin-bottom: 0;">${step.technicalExp}</p>
             <div class="technical-details">
-              <div><strong>CorrelationID:</strong> ${currentCorrelationId}</div>
+              <div><strong>${glossary("correlationId", "CorrelationID")}:</strong> ${escapeHtml(currentCorrelationId)}</div>
               <ul>${techDetails}</ul>
             </div>
             ${becauseTag}
@@ -3117,7 +3837,7 @@
         return `
           <div class="timeline-card ${borderClass}">
             <div class="card-header">
-              <span class="service-name">${step.service}</span>
+              <span class="service-name">${glossaryServiceName(step.service)}</span>
               <span class="action-badge">${step.action}</span>
             </div>
             ${eventTag}
