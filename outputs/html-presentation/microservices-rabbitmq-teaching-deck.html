@@ -373,6 +373,24 @@
       background: rgba(16, 26, 43, .62);
     }
 
+    .takeaway-card {
+      min-height: 230px;
+      display: grid;
+      grid-template-rows: 34px 58px 1fr;
+      align-content: start;
+      text-align: left;
+      gap: 12px;
+    }
+
+    .takeaway-card .dot {
+      align-self: start;
+    }
+
+    .takeaway-card h3,
+    .takeaway-card p {
+      align-self: start;
+    }
+
     .card-row {
       display: grid;
       gap: 12px;
@@ -421,6 +439,28 @@
     .event-chip.green { border-color: rgba(22, 209, 141, .38); background: rgba(22, 209, 141, .12); color: #bdffe6; }
     .event-chip.amber { border-color: rgba(241, 170, 61, .44); background: rgba(241, 170, 61, .13); color: #ffe4b9; }
     .event-chip.red { border-color: rgba(255, 95, 109, .44); background: rgba(255, 95, 109, .12); color: #ffd0d5; }
+
+    .directional-event {
+      display: inline-flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .direction-label {
+      display: inline-flex;
+      align-items: center;
+      min-height: 24px;
+      padding: 4px 8px;
+      border-radius: 999px;
+      border: 1px solid rgba(22, 209, 141, .3);
+      background: rgba(22, 209, 141, .1);
+      color: #bdffe6;
+      font-size: .64rem;
+      font-weight: 900;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+    }
 
     .architecture {
       display: grid;
@@ -1096,7 +1136,7 @@
 
     .rabbit-routing-map {
       position: relative;
-      min-height: 350px;
+      min-height: 430px;
       border-radius: 22px;
       border: 1px solid rgba(143, 165, 204, .22);
       background:
@@ -1128,7 +1168,7 @@
 
     .rabbit-node.publisher {
       left: 3%;
-      top: 32%;
+      top: 35%;
       width: 17%;
       min-width: 160px;
       border-color: rgba(35, 199, 217, .32);
@@ -1136,7 +1176,7 @@
 
     .rabbit-node.broker-core {
       left: 30%;
-      top: 16%;
+      top: 19%;
       width: 24%;
       min-height: 230px;
       text-align: center;
@@ -1149,7 +1189,7 @@
 
     .rabbit-node.routing-decision {
       left: 55%;
-      top: 35%;
+      top: 37%;
       width: 15%;
       min-width: 142px;
       text-align: center;
@@ -1168,10 +1208,10 @@
       background: rgba(28, 24, 18, .86);
     }
 
-    .rabbit-node.queue.q1 { top: 8%; }
-    .rabbit-node.queue.q2 { top: 38%; }
+    .rabbit-node.queue.q1 { top: 6%; }
+    .rabbit-node.queue.q2 { top: 38.5%; }
     .rabbit-node.queue.q3 {
-      top: 68%;
+      top: 71%;
       opacity: .72;
       border-color: rgba(143, 165, 204, .2);
       background: rgba(13, 20, 32, .82);
@@ -1388,8 +1428,22 @@
       background: rgba(255,255,255,.045);
       position: relative;
       display: grid;
-      align-content: space-between;
-      gap: 14px;
+      grid-template-rows: 58px 66px 1fr;
+      align-content: start;
+      gap: 10px;
+    }
+
+    .flow-node h3 {
+      align-self: start;
+    }
+
+    .flow-node > .event-chip,
+    .flow-node > .directional-event {
+      align-self: start;
+    }
+
+    .flow-node > .small {
+      align-self: start;
     }
 
     .flow-node::after {
@@ -1764,13 +1818,7 @@
       <div class="slide-inner cover-slide">
         <span class="eyebrow">Teaching Project</span>
         <h1 class="cover-title">Microservices Demo</h1>
-        <p class="cover-subtitle">Event-driven checkout with RabbitMQ, Docker Compose, and inspectable service boundaries.</p>
-        <div class="cover-meta">
-          <span class="tag">Microservices</span>
-          <span class="tag">RabbitMQ</span>
-          <span class="tag">Event choreography</span>
-          <span class="tag">Classroom demo</span>
-        </div>
+        <p class="cover-subtitle">Event-driven checkout demo with RabbitMQ, Docker Compose, and inspectable service boundaries.</p>
       </div>
     </section>
 
@@ -1778,7 +1826,7 @@
       <div class="slide-inner intro-layout">
         <div class="profile-card">
           <div>
-            <h2>Doga Babacan</h2>
+            <h2>Doğa Babacan</h2>
             </br>
             <p class="lead">Software Developer</p>
           </div>
@@ -1871,7 +1919,6 @@
     <section class="slide" data-title="Architecture">
       <div class="slide-inner">
         <span class="eyebrow">Project Architecture</span>
-        <h2>The gateway starts the request; the exchange connects event publishers to event consumers.</h2>
         <div class="panel">
           <div class="architecture-caption">
             <span class="legend-item"><span class="legend-swatch green"></span>publishes / sends an event</span>
@@ -1937,7 +1984,7 @@
     <section class="slide" data-title="Orchestrator">
       <div class="slide-inner">
         <span class="eyebrow">Architecture Pattern</span>
-        <h2>An orchestrator coordinates the process; this demo uses event choreography instead.</h2>
+        <h2>An orchestrator coordinates the process; we use choreography instead.</h2>
         <div class="orchestrator-compare">
           <div class="compare-panel">
             <div>
@@ -1964,7 +2011,7 @@
                 <div class="kv-item"><span class="kv-label">Errors</span><span class="small">Handled centrally</span></div>
                 <div class="kv-item"><span class="kv-label">Best for</span><span class="small">Strict business processes</span></div>
               </div>
-              <div class="compare-item"><span class="dot amber"></span><span>Example: loan approval, insurance claim, travel booking, or order fulfillment where one process must coordinate many steps.</span></div>
+              <div class="compare-item"><span class="dot amber"></span><span>Example: loan approval where one Workflow Orchestrator calls Credit Check, Fraud Check, Risk Scoring, and Contract services in a required order, then decides approve or reject.</span></div>
             </div>
           </div>
 
@@ -1994,6 +2041,7 @@
                 <div class="kv-item"><span class="kv-label">Best for</span><span class="small">Event-driven systems</span></div>
               </div>
               <div class="compare-item"><span class="dot green"></span><span>In this demo, Order publishes <span class="tag">order.created</span>; Inventory, Payment, Notification, and Analytics react through their own queues.</span></div>
+              <div class="compare-item"><span class="dot green"></span><span>Example: Order Service publishes <span class="tag">order.created</span>; Inventory reserves stock, Payment starts payment processing, Notification prepares a customer update, and Analytics records the order.</span></div>
             </div>
           </div>
         </div>
@@ -2099,7 +2147,6 @@
             <div class="routing-legend">
               <span class="legend-item"><span class="legend-swatch"></span>publish to broker</span>
               <span class="legend-item"><span class="legend-swatch amber"></span>route matching copies</span>
-              <span class="legend-item"><span class="legend-swatch green"></span>queues wait until services read</span>
             </div>
           </div>
           <div class="term-strip">
@@ -2127,7 +2174,7 @@
     <section class="slide" data-title="Happy path">
       <div class="slide-inner">
         <span class="eyebrow">Successful Checkout</span>
-        <h2>Success is a chain of published facts.</h2>
+        <h2>Success is a chain of published events.</h2>
         <div class="panel flow">
           <div class="flow-line">
             <div class="flow-node">
@@ -2137,23 +2184,23 @@
             </div>
             <div class="flow-node">
               <h3>Order</h3>
-              <span class="event-chip green">order.created</span>
-              <p class="small">Stores status as created.</p>
+              <span class="directional-event"><span class="direction-label">Sends</span><span class="event-chip green">order.created</span></span>
+              <p class="small">Stores status as created, then publishes the event.</p>
             </div>
             <div class="flow-node">
               <h3>Inventory</h3>
-              <span class="event-chip green">inventory.reserved</span>
-              <p class="small">Reduces stock.</p>
+              <span class="directional-event"><span class="direction-label">Sends</span><span class="event-chip green">inventory.reserved</span></span>
+              <p class="small">Receives order.created, reduces stock, then publishes reservation success.</p>
             </div>
             <div class="flow-node">
               <h3>Payment</h3>
-              <span class="event-chip green">payment.completed</span>
-              <p class="small">Payment succeeds.</p>
+              <span class="directional-event"><span class="direction-label">Sends</span><span class="event-chip green">payment.completed</span></span>
+              <p class="small">Receives inventory.reserved, payment succeeds, then publishes completion.</p>
             </div>
             <div class="flow-node">
               <h3>Order + Notification</h3>
-              <span class="event-chip green">order.completed</span>
-              <p class="small">Order reaches the completed outcome.</p>
+              <span class="directional-event"><span class="direction-label">Order sends</span><span class="event-chip green">order.completed</span></span>
+              <p class="small">Order receives payment.completed and reaches the completed outcome. Notification also receives payment.completed.</p>
             </div>
           </div>
         </div>
@@ -2227,12 +2274,12 @@
           <div class="tab-card">
             <span class="event-chip">Expected Scenario Flow</span>
             <h3>Scripted explanation</h3>
-            <p class="small">Shows the expected path after a checkout request. Good for introducing the sequence.</p>
+            <p class="small">Shows the expected path after a checkout request.</p>
           </div>
           <div class="tab-card">
             <span class="event-chip green">Live Broker Lab</span>
             <h3>Real queue state</h3>
-            <p class="small">Shows Ready, Unacked, and Consumers from RabbitMQ. Good for catch-up demos.</p>
+            <p class="small">Shows Ready, Unacked, and Consumers from RabbitMQ. Catch-up behavior can be visualized.</p>
           </div>
           <div class="tab-card">
             <span class="event-chip">Flow Guide</span>
@@ -2242,10 +2289,9 @@
           <div class="tab-card">
             <span class="event-chip">Service Explorer</span>
             <h3>Responsibilities</h3>
-            <p class="small">Connects each service to the messages it publishes and consumes.</p>
+            <p class="small">Connects each service to the messages it publishes and consumes. Explains each service in detail.</p>
           </div>
         </div>
-        <div class="terminal">docker compose logs -f notification-service<br>docker compose logs -f inventory-service<br>docker compose logs -f order-service</div>
       </div>
     </section>
 
@@ -2254,30 +2300,36 @@
         <span class="eyebrow">Final Takeaways</span>
         <h2>Students should leave with three architecture instincts.</h2>
         <div class="grid-3">
-          <div class="panel flat">
+          <div class="panel flat takeaway-card">
             <div class="dot green"></div>
             <h3>Events decouple services</h3>
-            <p class="small">A publisher announces what happened. Consumers decide whether they care.</p>
+            <p class="small">A publisher announces what happened. Consumers decide what to do with it.</p>
           </div>
-          <div class="panel flat">
+          <div class="panel flat takeaway-card">
             <div class="dot amber"></div>
             <h3>Queues make waiting visible</h3>
             <p class="small">Stopped downstream consumers do not erase work. The queue can hold it.</p>
           </div>
-          <div class="panel flat">
+          <div class="panel flat takeaway-card">
             <div class="dot red"></div>
             <h3>Synchronous calls fail immediately</h3>
-            <p class="small">If the service needed before the first event is down, the workflow cannot begin.</p>
+            <p class="small">If the required service cannot be called during the request, the workflow cannot begin. After the service returns, the request must be sent again.</p>
           </div>
         </div>
-        <p class="lead">The best classroom discussion is not “which tool is best,” but “which boundary creates which behavior?”</p>
+      </div>
+    </section>
+
+    <section class="slide" data-title="Thank you">
+      <div class="slide-inner cover-slide">
+        <h1 class="cover-title">Thank You</h1>
+        <p class="cover-subtitle">Now we will continue with the live demo and inspect the services, RabbitMQ queues, and failure behavior directly.</p>
       </div>
     </section>
   </main>
 
   <nav class="nav" aria-label="Slide navigation">
     <button type="button" id="prev" aria-label="Previous slide">‹</button>
-    <div class="counter" id="counter">1 / 11</div>
+    <div class="counter" id="counter">1 / 12</div>
     <button type="button" id="next" aria-label="Next slide">›</button>
   </nav>
   <div class="progress" aria-hidden="true"><span id="progress"></span></div>
