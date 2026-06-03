@@ -1,0 +1,2339 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Microservices + RabbitMQ Teaching Demo</title>
+  <style>
+    :root {
+      --bg: #09111f;
+      --bg-2: #101a2b;
+      --surface: #132033;
+      --surface-2: #182942;
+      --line: #2a3b58;
+      --text: #ffffff;
+      --muted: #c1ccdc;
+      --soft: #d8e1ee;
+      --cyan: #23c7d9;
+      --green: #16d18d;
+      --amber: #f1aa3d;
+      --red: #ff5f6d;
+      --blue: #5794ff;
+      --violet: #9b7cff;
+      --shadow: 0 22px 70px rgba(0, 0, 0, .34);
+      --radius: 18px;
+      --safe-x: clamp(22px, 5vw, 72px);
+      --safe-y: clamp(20px, 4vh, 48px);
+      --nav-space: 96px;
+      color-scheme: dark;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 20% 8%, rgba(35, 199, 217, .14), transparent 24%),
+        radial-gradient(circle at 88% 18%, rgba(155, 124, 255, .12), transparent 25%),
+        linear-gradient(145deg, #07101e 0%, #0b1526 44%, #0f1727 100%);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--text);
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: .16;
+      background-image:
+        linear-gradient(rgba(255,255,255,.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.05) 1px, transparent 1px);
+      background-size: 52px 52px;
+      mask-image: linear-gradient(to bottom, black, transparent 72%);
+    }
+
+    button {
+      font: inherit;
+      color: inherit;
+    }
+
+    .deck {
+      height: 100vh;
+      width: 100vw;
+      position: relative;
+    }
+
+    .slide {
+      position: absolute;
+      inset: 0;
+      display: none;
+      min-height: 100vh;
+      padding: var(--safe-y) var(--safe-x) calc(var(--safe-y) + var(--nav-space));
+    }
+
+    .slide.active {
+      display: grid;
+      animation: enter .34s ease both;
+    }
+
+    @keyframes enter {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .slide-inner {
+      width: min(1220px, 100%);
+      min-height: calc(100vh - var(--safe-y) * 2 - var(--nav-space));
+      margin: auto;
+      display: grid;
+      gap: clamp(18px, 2.4vw, 30px);
+      align-content: center;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      width: max-content;
+      color: var(--cyan);
+      font-size: clamp(.76rem, 1.1vw, .86rem);
+      font-weight: 800;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+
+    .eyebrow::before {
+      content: "";
+      width: 34px;
+      height: 2px;
+      border-radius: 99px;
+      background: var(--cyan);
+      box-shadow: 0 0 18px rgba(35, 199, 217, .7);
+    }
+
+    h1, h2, h3, p { margin: 0; }
+
+    h1 {
+      max-width: 980px;
+      font-size: clamp(2.45rem, 5.7vw, 5.45rem);
+      line-height: .94;
+      letter-spacing: 0;
+      color: var(--text);
+      text-shadow: 0 16px 38px rgba(0, 0, 0, .28);
+    }
+
+    h2 {
+      font-size: clamp(2rem, 4.2vw, 4.2rem);
+      line-height: 1;
+      letter-spacing: 0;
+      max-width: 1060px;
+      color: var(--text);
+    }
+
+    h3 {
+      font-size: clamp(1.04rem, 1.65vw, 1.36rem);
+      line-height: 1.2;
+      color: var(--text);
+    }
+
+    .lead {
+      max-width: 840px;
+      color: var(--muted);
+      font-size: clamp(1rem, 1.5vw, 1.26rem);
+      line-height: 1.5;
+    }
+
+    .small {
+      color: var(--muted);
+      font-size: clamp(.84rem, 1.1vw, .98rem);
+      line-height: 1.45;
+    }
+
+    .clean-list {
+      margin: 7px 0 0;
+      padding-left: 1.1rem;
+    }
+
+    .clean-list li + li {
+      margin-top: 4px;
+    }
+
+    .clean-list li::marker {
+      color: var(--cyan);
+    }
+
+    .highlight { color: var(--cyan); }
+    .ok { color: var(--green); }
+    .warn { color: var(--amber); }
+    .bad { color: var(--red); }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(310px, .82fr);
+      gap: clamp(18px, 3vw, 34px);
+      align-items: stretch;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .grid-4 {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .concept-layout {
+      display: grid;
+      grid-template-columns: minmax(0, .82fr) minmax(0, 1.18fr);
+      gap: clamp(18px, 3vw, 34px);
+      align-items: center;
+    }
+
+    .concept-statement {
+      display: grid;
+      gap: 18px;
+      align-content: center;
+    }
+
+    .concept-statement .lead {
+      max-width: 560px;
+    }
+
+    .concept-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .concept-card {
+      min-height: 178px;
+      padding: 18px;
+      border-radius: 18px;
+      border: 1px solid rgba(143, 165, 204, .18);
+      background:
+        linear-gradient(180deg, rgba(24, 41, 66, .82), rgba(11, 21, 36, .82));
+      box-shadow: inset 0 0 30px rgba(255,255,255,.025);
+      display: grid;
+      align-content: start;
+      gap: 12px;
+      position: relative;
+      overflow: visible;
+    }
+
+    .concept-card::after {
+      content: "";
+      position: absolute;
+      inset: auto 0 0 0;
+      height: 3px;
+      background: linear-gradient(90deg, transparent, rgba(35, 199, 217, .72), transparent);
+      opacity: .65;
+      border-radius: 0 0 18px 18px;
+    }
+
+    .concept-card.amber::after {
+      background: linear-gradient(90deg, transparent, rgba(241, 170, 61, .72), transparent);
+    }
+
+    .concept-card.green::after {
+      background: linear-gradient(90deg, transparent, rgba(22, 209, 141, .72), transparent);
+    }
+
+    .concept-card.violet::after {
+      background: linear-gradient(90deg, transparent, rgba(155, 124, 255, .72), transparent);
+    }
+
+    .concept-icon {
+      width: 34px;
+      height: 34px;
+      border-radius: 12px;
+      display: grid;
+      place-items: center;
+      border: 1px solid rgba(35, 199, 217, .35);
+      background: rgba(35, 199, 217, .1);
+      color: #d9faff;
+      font-weight: 950;
+      font-size: .9rem;
+    }
+
+    .concept-icon.amber {
+      border-color: rgba(241, 170, 61, .35);
+      background: rgba(241, 170, 61, .1);
+      color: #ffe5ba;
+    }
+
+    .concept-icon.green {
+      border-color: rgba(22, 209, 141, .35);
+      background: rgba(22, 209, 141, .1);
+      color: #bdffe6;
+    }
+
+    .concept-icon.violet {
+      border-color: rgba(155, 124, 255, .35);
+      background: rgba(155, 124, 255, .1);
+      color: #e4dcff;
+    }
+
+    .state-strip {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      gap: 8px;
+      align-items: center;
+      margin-top: 2px;
+      font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+      font-size: .72rem;
+    }
+
+    .state-pill {
+      padding: 7px 9px;
+      border-radius: 10px;
+      border: 1px solid rgba(143, 165, 204, .18);
+      background: rgba(5, 11, 20, .38);
+      text-align: center;
+      color: var(--soft);
+    }
+
+    .state-pill.good {
+      color: #bdffe6;
+      border-color: rgba(22, 209, 141, .3);
+      background: rgba(22, 209, 141, .08);
+    }
+
+    .state-pill.bad {
+      color: #ffd0d5;
+      border-color: rgba(255, 95, 109, .3);
+      background: rgba(255, 95, 109, .08);
+    }
+
+    .state-branch {
+      display: grid;
+      gap: 5px;
+    }
+
+    .ownership-list {
+      display: grid;
+      gap: 0;
+      padding: 10px 14px;
+      border-radius: 18px;
+      border: 1px solid rgba(35, 199, 217, .18);
+      background:
+        linear-gradient(180deg, rgba(24, 41, 66, .62), rgba(8, 16, 29, .66));
+      box-shadow: inset 0 0 28px rgba(35, 199, 217, .035);
+      max-width: 560px;
+    }
+
+    .ownership-row {
+      display: grid;
+      grid-template-columns: minmax(130px, .8fr) 1fr;
+      gap: 10px;
+      align-items: baseline;
+      font-size: .82rem;
+      line-height: 1.25;
+      padding: 8px 0;
+      border-bottom: 1px solid rgba(143, 165, 204, .1);
+    }
+
+    .ownership-row:last-child {
+      border-bottom: 0;
+    }
+
+    .ownership-row strong {
+      color: var(--text);
+      font-weight: 900;
+    }
+
+    .ownership-row span {
+      color: var(--muted);
+    }
+
+    .ownership-arrow {
+      color: var(--cyan);
+      font-weight: 900;
+      opacity: .9;
+    }
+
+    .panel {
+      background: linear-gradient(180deg, rgba(24, 41, 66, .92), rgba(15, 27, 45, .92));
+      border: 1px solid rgba(143, 165, 204, .2);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: clamp(18px, 2.4vw, 28px);
+      min-width: 0;
+    }
+
+    .panel.flat {
+      box-shadow: none;
+      background: rgba(16, 26, 43, .62);
+    }
+
+    .card-row {
+      display: grid;
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    .point {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 12px;
+      align-items: start;
+      padding: 14px;
+      border: 1px solid rgba(143, 165, 204, .18);
+      border-radius: 14px;
+      background: rgba(255,255,255,.035);
+    }
+
+    .dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      margin-top: 5px;
+      background: var(--cyan);
+      box-shadow: 0 0 20px rgba(35, 199, 217, .75);
+    }
+
+    .dot.green { background: var(--green); box-shadow: 0 0 20px rgba(22, 209, 141, .7); }
+    .dot.amber { background: var(--amber); box-shadow: 0 0 20px rgba(241, 170, 61, .65); }
+    .dot.red { background: var(--red); box-shadow: 0 0 20px rgba(255, 95, 109, .65); }
+
+    .tag, .event-chip {
+      display: inline-flex;
+      align-items: center;
+      min-height: 28px;
+      width: fit-content;
+      padding: 5px 10px;
+      border: 1px solid rgba(87, 148, 255, .34);
+      border-radius: 999px;
+      background: rgba(87, 148, 255, .12);
+      color: #cfe0ff;
+      font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+      font-size: .78rem;
+      white-space: nowrap;
+    }
+
+    .event-chip.green { border-color: rgba(22, 209, 141, .38); background: rgba(22, 209, 141, .12); color: #bdffe6; }
+    .event-chip.amber { border-color: rgba(241, 170, 61, .44); background: rgba(241, 170, 61, .13); color: #ffe4b9; }
+    .event-chip.red { border-color: rgba(255, 95, 109, .44); background: rgba(255, 95, 109, .12); color: #ffd0d5; }
+
+    .architecture {
+      display: grid;
+      grid-template-columns: 1fr minmax(170px, .7fr) 1fr;
+      gap: 18px;
+      align-items: center;
+    }
+
+    .service-stack {
+      display: grid;
+      gap: 12px;
+    }
+
+    .service {
+      min-height: 68px;
+      padding: 13px;
+      border-radius: 14px;
+      border: 1px solid rgba(143, 165, 204, .2);
+      background: rgba(255,255,255,.045);
+      display: grid;
+      align-content: center;
+      gap: 6px;
+    }
+
+    .service.event-role {
+      min-height: 104px;
+      align-content: start;
+    }
+
+    .role-line {
+      display: grid;
+      grid-template-columns: 58px 1fr;
+      gap: 8px;
+      color: var(--muted);
+      font-size: .75rem;
+      line-height: 1.25;
+    }
+
+    .role-label {
+      min-width: 58px;
+      color: var(--soft);
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      font-size: .66rem;
+    }
+
+    .role-label.pub { color: #bdffe6; }
+    .role-label.recv { color: #cfe0ff; }
+
+    .event-list {
+      display: grid;
+      gap: 4px;
+      min-width: 0;
+    }
+
+    .event-row {
+      display: grid;
+      grid-template-columns: 8px 1fr;
+      gap: 7px;
+      align-items: center;
+      min-width: 0;
+      color: var(--soft);
+      font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+      font-size: .76rem;
+      line-height: 1.22;
+      overflow-wrap: anywhere;
+    }
+
+    .event-row::before {
+      content: "";
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--blue);
+      box-shadow: 0 0 10px rgba(87, 148, 255, .45);
+    }
+
+    .event-row.good::before {
+      background: var(--green);
+      box-shadow: 0 0 10px rgba(22, 209, 141, .45);
+    }
+
+    .event-row.bad::before {
+      background: var(--red);
+      box-shadow: 0 0 10px rgba(255, 95, 109, .45);
+    }
+
+    .event-row.neutral::before {
+      background: var(--cyan);
+      box-shadow: 0 0 10px rgba(35, 199, 217, .45);
+    }
+
+    .architecture-caption {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 9px;
+      margin-bottom: 14px;
+      color: var(--muted);
+      font-size: .82rem;
+    }
+
+    .service strong {
+      font-size: clamp(.98rem, 1.4vw, 1.16rem);
+    }
+
+    .broker {
+      min-height: 260px;
+      border-radius: 24px;
+      display: grid;
+      place-items: center;
+      text-align: center;
+      padding: 22px;
+      border: 1px solid rgba(35, 199, 217, .35);
+      background:
+        radial-gradient(circle, rgba(35, 199, 217, .22), rgba(35, 199, 217, .04) 54%, transparent 55%),
+        rgba(8, 18, 31, .72);
+      box-shadow: inset 0 0 42px rgba(35, 199, 217, .11);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .broker::before, .broker::after {
+      content: "";
+      position: absolute;
+      inset: 18%;
+      border: 1px dashed rgba(35, 199, 217, .22);
+      border-radius: 50%;
+    }
+
+    .broker::after {
+      inset: 30%;
+      border-color: rgba(155, 124, 255, .24);
+    }
+
+    .broker-content {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      gap: 12px;
+      justify-items: center;
+    }
+
+    .broker-icon {
+      width: 66px;
+      height: 66px;
+      display: grid;
+      place-items: center;
+      border-radius: 20px;
+      border: 1px solid rgba(35, 199, 217, .34);
+      background: rgba(35, 199, 217, .11);
+      font-size: 2rem;
+      font-weight: 900;
+    }
+
+    .concept-map {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 12px;
+      align-items: stretch;
+    }
+
+    .concept {
+      min-height: 150px;
+      padding: 16px;
+      border-radius: 16px;
+      background: rgba(255,255,255,.045);
+      border: 1px solid rgba(143, 165, 204, .19);
+      display: grid;
+      gap: 8px;
+      align-content: start;
+    }
+
+    .concept .num {
+      width: 30px;
+      height: 30px;
+      border-radius: 10px;
+      display: grid;
+      place-items: center;
+      font-weight: 900;
+      color: #07101e;
+      background: var(--cyan);
+    }
+
+    .rabbit-structure {
+      display: grid;
+      gap: 16px;
+    }
+
+    .broker-stage {
+      position: relative;
+      min-height: 340px;
+      padding: 22px;
+      border-radius: 20px;
+      border: 1px solid rgba(143, 165, 204, .2);
+      background:
+        linear-gradient(180deg, rgba(24, 41, 66, .72), rgba(9, 17, 31, .84)),
+        radial-gradient(circle at 50% 48%, rgba(35, 199, 217, .12), transparent 34%);
+      overflow: hidden;
+    }
+
+    .broker-stage::before {
+      content: "";
+      position: absolute;
+      left: 7%;
+      right: 7%;
+      top: 50%;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, rgba(35, 199, 217, .5), rgba(241, 170, 61, .55), rgba(22, 209, 141, .52), transparent);
+    }
+
+    .broker-stage::after {
+      content: "";
+      position: absolute;
+      z-index: 0;
+      left: 35%;
+      top: 50%;
+      width: 39%;
+      height: 112px;
+      border-top: 2px solid rgba(241, 170, 61, .38);
+      border-right: 2px solid rgba(241, 170, 61, .28);
+      border-bottom: 2px solid rgba(241, 170, 61, .18);
+      border-radius: 0 18px 18px 0;
+      transform: translateY(-50%);
+      pointer-events: none;
+    }
+
+    .broker-parts {
+      position: relative;
+      z-index: 2;
+      display: grid;
+      grid-template-columns: .82fr 1.05fr .8fr 1.15fr .9fr;
+      gap: 12px;
+      height: 100%;
+      min-height: 296px;
+      align-items: center;
+    }
+
+    .broker-part {
+      min-height: 132px;
+      padding: 15px;
+      border-radius: 16px;
+      border: 1px solid rgba(143, 165, 204, .23);
+      background: rgba(5, 11, 20, .46);
+      display: grid;
+      gap: 9px;
+      align-content: center;
+      box-shadow: inset 0 0 28px rgba(255,255,255,.025);
+    }
+
+    .broker-part.exchange {
+      min-height: 188px;
+      text-align: center;
+      border-color: rgba(35, 199, 217, .42);
+      background: radial-gradient(circle, rgba(35, 199, 217, .2), rgba(5, 11, 20, .52) 62%);
+      justify-items: center;
+    }
+
+    .broker-part.queues {
+      gap: 8px;
+      background: rgba(241, 170, 61, .07);
+      border-color: rgba(241, 170, 61, .28);
+    }
+
+    .broker-part.consumers {
+      background: rgba(22, 209, 141, .06);
+      border-color: rgba(22, 209, 141, .26);
+    }
+
+    .part-label {
+      color: var(--muted);
+      font-size: .74rem;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+    }
+
+    .routing-gate {
+      display: grid;
+      place-items: center;
+      min-height: 110px;
+      border-radius: 16px;
+      border: 1px dashed rgba(241, 170, 61, .52);
+      background: rgba(241, 170, 61, .07);
+      text-align: center;
+      padding: 12px;
+    }
+
+    .queue-stack,
+    .consumer-stack {
+      display: grid;
+      gap: 8px;
+    }
+
+    .queue-box,
+    .consumer-box {
+      padding: 9px 10px;
+      border-radius: 12px;
+      background: rgba(255,255,255,.055);
+      border: 1px solid rgba(143, 165, 204, .18);
+      font-size: .78rem;
+      line-height: 1.25;
+    }
+
+    .queue-box.match {
+      border-color: rgba(241, 170, 61, .5);
+      box-shadow: 0 0 20px rgba(241, 170, 61, .12);
+    }
+
+    .consumer-box.match {
+      border-color: rgba(22, 209, 141, .42);
+      box-shadow: 0 0 20px rgba(22, 209, 141, .12);
+    }
+
+    .message-pulse,
+    .delivery-pulse {
+      position: absolute;
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      background: var(--cyan);
+      opacity: .88;
+      box-shadow: 0 0 0 8px rgba(35, 199, 217, .12), 0 0 28px rgba(35, 199, 217, .9);
+    }
+
+    .message-pulse {
+      z-index: 1;
+      top: calc(50% - 13px);
+      left: 7%;
+      animation: messageRoute 6s ease-in-out infinite;
+    }
+
+    .delivery-pulse {
+      z-index: 1;
+      left: 35%;
+      top: calc(50% - 13px);
+      background: var(--amber);
+      box-shadow: 0 0 0 8px rgba(241, 170, 61, .13), 0 0 28px rgba(241, 170, 61, .82);
+      opacity: 0;
+    }
+
+    .delivery-pulse.inventory {
+      animation: deliveryInventory 6s ease-in-out infinite;
+    }
+
+    .delivery-pulse.analytics {
+      animation: deliveryAnalytics 6s ease-in-out infinite;
+    }
+
+    .delivery-pulse.notification {
+      animation: deliveryNotification 6s ease-in-out infinite;
+    }
+
+    @keyframes messageRoute {
+      0% { left: 8%; opacity: 0; transform: scale(.72); }
+      8%, 18% { left: 8%; opacity: .9; transform: scale(1); background: var(--cyan); }
+      42%, 55% { left: 31%; opacity: .95; background: var(--cyan); }
+      62%, 100% { left: 31%; opacity: 0; transform: scale(.72); }
+    }
+
+    @keyframes deliveryInventory {
+      0%, 42% { left: 35%; top: calc(50% - 13px); opacity: 0; transform: scale(.72); }
+      50% { opacity: .95; transform: scale(1); }
+      72% { left: 73%; top: calc(50% - 32px); opacity: .95; background: var(--amber); }
+      86% { left: 88%; top: calc(50% - 32px); opacity: .95; background: var(--green); box-shadow: 0 0 0 8px rgba(22, 209, 141, .13), 0 0 28px rgba(22, 209, 141, .82); }
+      100% { left: 88%; top: calc(50% - 32px); opacity: 0; transform: scale(.72); }
+    }
+
+    @keyframes deliveryAnalytics {
+      0%, 48% { left: 35%; top: calc(50% - 13px); opacity: 0; transform: scale(.72); }
+      56% { opacity: .88; transform: scale(.9); }
+      76% { left: 73%; top: calc(50% + 10px); opacity: .9; background: var(--amber); }
+      90% { left: 88%; top: calc(50% + 10px); opacity: .9; background: var(--green); box-shadow: 0 0 0 8px rgba(22, 209, 141, .13), 0 0 28px rgba(22, 209, 141, .82); }
+      100% { left: 88%; top: calc(50% + 10px); opacity: 0; transform: scale(.72); }
+    }
+
+    @keyframes deliveryNotification {
+      0%, 54% { left: 35%; top: calc(50% - 13px); opacity: 0; transform: scale(.72); }
+      62% { opacity: .55; transform: scale(.82); }
+      80% { left: 73%; top: calc(50% + 52px); opacity: .45; background: var(--red); }
+      100% { left: 73%; top: calc(50% + 52px); opacity: 0; transform: scale(.72); }
+    }
+
+    .term-strip {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .term-mini {
+      padding: 14px;
+      border-radius: 14px;
+      background: rgba(255,255,255,.04);
+      border: 1px solid rgba(143, 165, 204, .17);
+    }
+
+    .orchestrator-compare {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 18px;
+      align-items: stretch;
+    }
+
+    .compare-panel {
+      min-height: 430px;
+      padding: 22px;
+      border-radius: 20px;
+      border: 1px solid rgba(143, 165, 204, .2);
+      background: linear-gradient(180deg, rgba(24, 41, 66, .76), rgba(9, 17, 31, .86));
+      display: grid;
+      gap: 16px;
+      align-content: start;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .compare-panel::after {
+      content: "";
+      position: absolute;
+      inset: auto 0 0 0;
+      height: 3px;
+      background: linear-gradient(90deg, transparent, rgba(155, 124, 255, .76), transparent);
+    }
+
+    .compare-panel.demo-used::after {
+      background: linear-gradient(90deg, transparent, rgba(35, 199, 217, .76), transparent);
+    }
+
+    .mini-map {
+      min-height: 232px;
+      display: grid;
+      place-items: center;
+      position: relative;
+      border-radius: 16px;
+      background:
+        radial-gradient(circle at center, rgba(35, 199, 217, .1), transparent 48%),
+        rgba(5, 11, 20, .32);
+      border: 1px solid rgba(143, 165, 204, .14);
+    }
+
+    .hub-node {
+      width: 106px;
+      height: 106px;
+      border-radius: 24px;
+      display: grid;
+      place-items: center;
+      text-align: center;
+      padding: 12px;
+      font-weight: 900;
+      border: 1px solid rgba(155, 124, 255, .42);
+      background: rgba(155, 124, 255, .13);
+      box-shadow: 0 0 36px rgba(155, 124, 255, .16);
+      z-index: 2;
+    }
+
+    .hub-node.demo {
+      border-color: rgba(35, 199, 217, .42);
+      background: rgba(35, 199, 217, .12);
+      box-shadow: 0 0 36px rgba(35, 199, 217, .16);
+    }
+
+    .sat-node {
+      position: absolute;
+      min-width: 92px;
+      padding: 9px 10px;
+      border-radius: 12px;
+      border: 1px solid rgba(143, 165, 204, .2);
+      background: rgba(255,255,255,.055);
+      text-align: center;
+      font-size: .78rem;
+      font-weight: 800;
+    }
+
+    .sat-node.top { top: 18px; left: 50%; transform: translateX(-50%); }
+    .sat-node.left { left: 18px; top: 50%; transform: translateY(-50%); }
+    .sat-node.right { right: 18px; top: 50%; transform: translateY(-50%); }
+    .sat-node.bottom { bottom: 18px; left: 50%; transform: translateX(-50%); }
+
+    .orchestration-map .sat-node.top { top: 14px; }
+    .orchestration-map .sat-node.bottom { bottom: 14px; }
+    .orchestration-map .sat-node.left { left: 20px; }
+    .orchestration-map .sat-node.right { right: 20px; }
+
+    .choreography-map .sat-node.top { top: 14px; }
+    .choreography-map .sat-node.bottom { bottom: 14px; }
+    .choreography-map .sat-node.left { left: 22px; }
+    .choreography-map .sat-node.right { right: 22px; }
+
+    .mini-map svg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+    }
+
+    .compare-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .compare-kv {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 9px;
+    }
+
+    .kv-item {
+      padding: 10px;
+      border-radius: 12px;
+      border: 1px solid rgba(143, 165, 204, .15);
+      background: rgba(255,255,255,.035);
+      display: grid;
+      gap: 4px;
+    }
+
+    .kv-label {
+      color: var(--muted);
+      font-size: .66rem;
+      font-weight: 900;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    .source-note {
+      color: rgba(216, 225, 238, .58);
+      font-size: .72rem;
+      line-height: 1.35;
+      margin-top: -4px;
+    }
+
+    .source-note a {
+      color: #b9d2ff;
+      text-decoration: none;
+      border-bottom: 1px solid rgba(185, 210, 255, .35);
+    }
+
+    .compare-item {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 10px;
+      color: var(--muted);
+      font-size: .9rem;
+      line-height: 1.38;
+    }
+
+    .compare-item .dot {
+      margin-top: 4px;
+    }
+
+    .pattern-visual {
+      position: relative;
+      min-height: 232px;
+      border-radius: 16px;
+      background:
+        radial-gradient(circle at center, rgba(35, 199, 217, .1), transparent 50%),
+        rgba(5, 11, 20, .32);
+      border: 1px solid rgba(143, 165, 204, .14);
+      overflow: hidden;
+    }
+
+    .pattern-visual svg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+    }
+
+    .pattern-node {
+      position: absolute;
+      z-index: 2;
+      min-width: 98px;
+      min-height: 38px;
+      padding: 9px 12px;
+      border-radius: 13px;
+      display: grid;
+      place-items: center;
+      text-align: center;
+      border: 1px solid rgba(143, 165, 204, .22);
+      background: rgba(20, 33, 52, .95);
+      color: var(--text);
+      font-size: .82rem;
+      font-weight: 900;
+      line-height: 1.15;
+      box-shadow: 0 10px 24px rgba(0,0,0,.18);
+    }
+
+    .pattern-node.hub {
+      width: 124px;
+      min-height: 96px;
+      border-radius: 24px;
+      font-size: 1rem;
+      border-color: rgba(155, 124, 255, .5);
+      background: radial-gradient(circle, rgba(155, 124, 255, .22), rgba(20, 33, 52, .96) 70%);
+      box-shadow: 0 0 34px rgba(155, 124, 255, .15);
+    }
+
+    .pattern-node.exchange {
+      width: 124px;
+      min-height: 96px;
+      border-radius: 24px;
+      font-size: 1rem;
+      border-color: rgba(35, 199, 217, .5);
+      background: radial-gradient(circle, rgba(35, 199, 217, .2), rgba(20, 33, 52, .96) 70%);
+      box-shadow: 0 0 34px rgba(35, 199, 217, .15);
+    }
+
+    .pattern-node.top { left: 50%; top: 14px; transform: translateX(-50%); }
+    .pattern-node.left { left: 20px; top: 50%; transform: translateY(-50%); }
+    .pattern-node.right { right: 20px; top: 50%; transform: translateY(-50%); }
+    .pattern-node.bottom { left: 50%; bottom: 14px; transform: translateX(-50%); }
+    .pattern-node.center { left: 50%; top: 50%; transform: translate(-50%, -50%); }
+
+    .diagram-line {
+      fill: none;
+      stroke-width: 2.5;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .diagram-line.command {
+      stroke: rgba(241, 170, 61, .58);
+    }
+
+    .diagram-line.event {
+      stroke: rgba(35, 199, 217, .58);
+    }
+
+    .diagram-line.receive {
+      stroke: rgba(22, 209, 141, .58);
+    }
+
+    .diagram-line.soft {
+      stroke: rgba(143, 165, 204, .22);
+      stroke-dasharray: 7 9;
+    }
+
+    .flow-badge {
+      position: absolute;
+      z-index: 3;
+      padding: 4px 8px;
+      border-radius: 999px;
+      border: 1px solid rgba(143, 165, 204, .18);
+      background: rgba(5, 11, 20, .84);
+      color: var(--muted);
+      font-size: .66rem;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      white-space: nowrap;
+    }
+
+    .flow-badge.command {
+      color: #ffe4b9;
+      border-color: rgba(241, 170, 61, .28);
+    }
+
+    .flow-badge.event {
+      color: #d9faff;
+      border-color: rgba(35, 199, 217, .3);
+    }
+
+    .flow-badge.receive {
+      color: #bdffe6;
+      border-color: rgba(22, 209, 141, .28);
+    }
+
+    .flow-badge.top-mid { left: 50%; top: 55px; transform: translateX(-50%); }
+    .flow-badge.left-mid { left: 126px; top: 50%; transform: translateY(-50%); }
+    .flow-badge.right-mid { right: 126px; top: 50%; transform: translateY(-50%); }
+    .flow-badge.bottom-mid { left: 50%; bottom: 55px; transform: translateX(-50%); }
+
+    .rabbit-routing-map {
+      position: relative;
+      min-height: 350px;
+      border-radius: 22px;
+      border: 1px solid rgba(143, 165, 204, .22);
+      background:
+        radial-gradient(circle at 42% 48%, rgba(35, 199, 217, .16), transparent 32%),
+        linear-gradient(180deg, rgba(24, 41, 66, .78), rgba(7, 15, 28, .88));
+      overflow: hidden;
+      box-shadow: var(--shadow);
+    }
+
+    .rabbit-routing-map svg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+    }
+
+    .rabbit-node {
+      position: absolute;
+      z-index: 2;
+      padding: 14px;
+      border-radius: 16px;
+      border: 1px solid rgba(143, 165, 204, .24);
+      background: rgba(7, 15, 28, .86);
+      box-shadow: inset 0 0 26px rgba(255,255,255,.025), 0 12px 30px rgba(0,0,0,.18);
+      display: grid;
+      gap: 7px;
+    }
+
+    .rabbit-node.publisher {
+      left: 3%;
+      top: 32%;
+      width: 17%;
+      min-width: 160px;
+      border-color: rgba(35, 199, 217, .32);
+    }
+
+    .rabbit-node.broker-core {
+      left: 30%;
+      top: 16%;
+      width: 24%;
+      min-height: 230px;
+      text-align: center;
+      justify-items: center;
+      align-content: center;
+      border-color: rgba(35, 199, 217, .48);
+      background:
+        radial-gradient(circle, rgba(35, 199, 217, .22), rgba(7, 15, 28, .88) 68%);
+    }
+
+    .rabbit-node.routing-decision {
+      left: 55%;
+      top: 35%;
+      width: 15%;
+      min-width: 142px;
+      text-align: center;
+      border-style: dashed;
+      border-color: rgba(241, 170, 61, .58);
+      background: rgba(34, 26, 13, .82);
+    }
+
+    .rabbit-node.queue {
+      left: 75%;
+      width: 21%;
+      min-width: 0;
+      min-height: 74px;
+      padding: 11px 12px;
+      border-color: rgba(241, 170, 61, .34);
+      background: rgba(28, 24, 18, .86);
+    }
+
+    .rabbit-node.queue.q1 { top: 8%; }
+    .rabbit-node.queue.q2 { top: 38%; }
+    .rabbit-node.queue.q3 {
+      top: 68%;
+      opacity: .72;
+      border-color: rgba(143, 165, 204, .2);
+      background: rgba(13, 20, 32, .82);
+    }
+
+    .rabbit-node.consumer {
+      display: none;
+    }
+
+    .rabbit-node.consumer.c1 { top: 14%; }
+    .rabbit-node.consumer.c2 { top: 45%; }
+
+    .node-title {
+      font-weight: 900;
+      font-size: clamp(.92rem, 1.18vw, 1.08rem);
+      line-height: 1.15;
+    }
+
+    .node-caption {
+      color: var(--muted);
+      font-size: clamp(.7rem, .92vw, .82rem);
+      line-height: 1.32;
+    }
+
+    .queue-name {
+      color: #ffe6bd;
+      font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+      font-size: .68rem;
+      overflow-wrap: anywhere;
+      line-height: 1.25;
+    }
+
+    .exchange-badge {
+      width: 62px;
+      height: 62px;
+      border-radius: 20px;
+      display: grid;
+      place-items: center;
+      border: 1px solid rgba(35, 199, 217, .46);
+      background: rgba(35, 199, 217, .14);
+      font-size: 2rem;
+      font-weight: 950;
+      box-shadow: 0 0 34px rgba(35, 199, 217, .2);
+    }
+
+    .route-line {
+      fill: none;
+      stroke-width: 3;
+      stroke-linecap: round;
+    }
+
+    .route-line.main { stroke: rgba(35, 199, 217, .42); }
+    .route-line.match { stroke: rgba(241, 170, 61, .58); }
+    .route-line.consume { stroke: rgba(22, 209, 141, .45); }
+    .route-line.muted {
+      stroke: rgba(143, 165, 204, .24);
+      stroke-dasharray: 8 10;
+    }
+
+    .route-dot {
+      filter: drop-shadow(0 0 10px rgba(35, 199, 217, .85));
+    }
+
+    .route-dot.match {
+      filter: drop-shadow(0 0 10px rgba(241, 170, 61, .82));
+    }
+
+    .route-dot.consume {
+      filter: drop-shadow(0 0 10px rgba(22, 209, 141, .82));
+    }
+
+    .routing-legend {
+      position: absolute;
+      z-index: 3;
+      left: 3%;
+      bottom: 14px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      color: var(--muted);
+      font-size: .76rem;
+    }
+
+    .legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 6px 9px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.055);
+      border: 1px solid rgba(143, 165, 204, .16);
+    }
+
+    .legend-swatch {
+      width: 16px;
+      height: 3px;
+      border-radius: 99px;
+      background: var(--cyan);
+    }
+
+    .legend-swatch.amber { background: var(--amber); }
+    .legend-swatch.green { background: var(--green); }
+
+    .help-term {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      white-space: nowrap;
+    }
+
+    .help-dot {
+      width: 17px;
+      height: 17px;
+      border: 1px solid rgba(35, 199, 217, .48);
+      border-radius: 50%;
+      display: inline-grid;
+      place-items: center;
+      color: #d9faff;
+      background: rgba(35, 199, 217, .11);
+      font-size: .68rem;
+      font-weight: 900;
+      line-height: 1;
+      cursor: help;
+      outline: none;
+    }
+
+    .help-tooltip {
+      position: absolute;
+      left: 50%;
+      bottom: calc(100% + 10px);
+      transform: translateX(-50%);
+      width: min(300px, 80vw);
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid rgba(143, 165, 204, .24);
+      background: rgba(5, 11, 20, .96);
+      color: var(--soft);
+      box-shadow: 0 16px 42px rgba(0,0,0,.34);
+      font-size: .76rem;
+      line-height: 1.35;
+      white-space: normal;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .15s ease, transform .15s ease;
+      z-index: 8;
+    }
+
+    .help-tooltip::after {
+      content: "";
+      position: absolute;
+      left: 50%;
+      top: 100%;
+      transform: translateX(-50%);
+      border: 7px solid transparent;
+      border-top-color: rgba(5, 11, 20, .96);
+    }
+
+    .help-term.tip-left .help-tooltip {
+      left: 0;
+      transform: translateX(0);
+    }
+
+    .help-term.tip-left .help-tooltip::after {
+      left: 18px;
+      transform: translateX(0);
+    }
+
+    .help-term.tip-left .help-dot:hover + .help-tooltip,
+    .help-term.tip-left .help-dot:focus + .help-tooltip {
+      transform: translateX(0) translateY(-2px);
+    }
+
+    .help-term.tip-right .help-tooltip {
+      left: auto;
+      right: 0;
+      transform: translateX(0);
+    }
+
+    .help-term.tip-right .help-tooltip::after {
+      left: auto;
+      right: 18px;
+      transform: translateX(0);
+    }
+
+    .help-term.tip-right .help-dot:hover + .help-tooltip,
+    .help-term.tip-right .help-dot:focus + .help-tooltip {
+      transform: translateX(0) translateY(-2px);
+    }
+
+    .help-dot:hover + .help-tooltip,
+    .help-dot:focus + .help-tooltip {
+      opacity: 1;
+      transform: translateX(-50%) translateY(-2px);
+    }
+
+    .flow {
+      display: grid;
+      gap: 14px;
+    }
+
+    .flow-line {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 10px;
+      align-items: stretch;
+    }
+
+    .flow-node {
+      min-height: 125px;
+      padding: 15px;
+      border-radius: 16px;
+      border: 1px solid rgba(143, 165, 204, .2);
+      background: rgba(255,255,255,.045);
+      position: relative;
+      display: grid;
+      align-content: space-between;
+      gap: 14px;
+    }
+
+    .flow-node::after {
+      content: "";
+      position: absolute;
+      top: 50%;
+      right: -10px;
+      width: 10px;
+      height: 2px;
+      background: rgba(143, 165, 204, .35);
+    }
+
+    .flow-node:last-child::after { display: none; }
+
+    .queue-note {
+      padding: 14px;
+      border-radius: 15px;
+      border: 1px solid rgba(241, 170, 61, .38);
+      background: rgba(241, 170, 61, .1);
+    }
+
+    .outcomes {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .outcome {
+      border-radius: 16px;
+      padding: 17px;
+      background: rgba(255,255,255,.045);
+      border: 1px solid rgba(143, 165, 204, .18);
+      display: grid;
+      gap: 12px;
+      min-height: 190px;
+    }
+
+    .outcome.success { border-color: rgba(22, 209, 141, .35); }
+    .outcome.warning { border-color: rgba(241, 170, 61, .38); }
+    .outcome.failure { border-color: rgba(255, 95, 109, .35); }
+
+    .demo-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .demo {
+      padding: 18px;
+      border-radius: 16px;
+      border: 1px solid rgba(143, 165, 204, .2);
+      background: rgba(255,255,255,.045);
+      display: grid;
+      gap: 14px;
+    }
+
+    .terminal {
+      border: 1px solid rgba(143, 165, 204, .22);
+      background: #050b14;
+      border-radius: 14px;
+      padding: 12px;
+      color: #cfe0ff;
+      font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+      font-size: clamp(.7rem, .95vw, .82rem);
+      line-height: 1.5;
+      overflow-wrap: anywhere;
+    }
+
+    .ui-tabs {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .tab-card {
+      padding: 16px;
+      border-radius: 16px;
+      border: 1px solid rgba(143, 165, 204, .2);
+      background: rgba(255,255,255,.045);
+      min-height: 170px;
+      display: grid;
+      gap: 10px;
+      align-content: start;
+    }
+
+    .nav {
+      position: fixed;
+      left: 50%;
+      bottom: 18px;
+      transform: translateX(-50%);
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px;
+      border: 1px solid rgba(143, 165, 204, .2);
+      border-radius: 999px;
+      background: rgba(10, 18, 31, .78);
+      backdrop-filter: blur(16px);
+      box-shadow: 0 14px 40px rgba(0,0,0,.3);
+    }
+
+    .nav button {
+      width: 40px;
+      height: 40px;
+      border: 0;
+      border-radius: 50%;
+      background: rgba(255,255,255,.07);
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+      font-weight: 900;
+    }
+
+    .nav button:hover { background: rgba(35, 199, 217, .18); }
+
+    .counter {
+      min-width: 72px;
+      text-align: center;
+      color: var(--muted);
+      font-size: .86rem;
+      font-weight: 700;
+    }
+
+    .progress {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 4px;
+      z-index: 21;
+      background: rgba(255,255,255,.08);
+    }
+
+    .progress span {
+      display: block;
+      width: 0;
+      height: 100%;
+      background: linear-gradient(90deg, var(--cyan), var(--green));
+      transition: width .24s ease;
+    }
+
+    .foot {
+      position: fixed;
+      top: 18px;
+      right: 24px;
+      z-index: 10;
+      color: rgba(216, 225, 238, .64);
+      font-size: .78rem;
+      font-weight: 700;
+    }
+
+    .pill-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 9px;
+    }
+
+    .split-title {
+      display: grid;
+      gap: 14px;
+    }
+
+    .cover-slide {
+      text-align: center;
+      justify-items: center;
+      align-content: center;
+      gap: 24px;
+    }
+
+    .cover-title {
+      max-width: 980px;
+      font-size: clamp(3.6rem, 8vw, 7.8rem);
+      line-height: .9;
+    }
+
+    .cover-subtitle {
+      max-width: 760px;
+      color: var(--muted);
+      font-size: clamp(1.12rem, 1.8vw, 1.45rem);
+      line-height: 1.45;
+    }
+
+    .cover-meta {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 4px;
+    }
+
+    .intro-layout {
+      display: grid;
+      grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr);
+      gap: clamp(24px, 4vw, 54px);
+      align-items: stretch;
+    }
+
+    .profile-card {
+      min-height: 0;
+      height: 100%;
+      border-radius: 26px;
+      border: 1px solid rgba(35, 199, 217, .24);
+      background:
+        radial-gradient(circle at 50% 18%, rgba(35, 199, 217, .18), transparent 42%),
+        linear-gradient(180deg, rgba(24, 41, 66, .78), rgba(9, 17, 31, .9));
+      box-shadow: var(--shadow);
+      display: grid;
+      place-items: center;
+      text-align: center;
+      padding: 30px;
+      align-self: stretch;
+    }
+
+    .profile-avatar {
+      width: 128px;
+      height: 128px;
+      border-radius: 36px;
+      display: grid;
+      place-items: center;
+      border: 1px solid rgba(35, 199, 217, .42);
+      background: rgba(35, 199, 217, .12);
+      color: #d9faff;
+      font-size: 3.6rem;
+      font-weight: 950;
+      box-shadow: 0 0 46px rgba(35, 199, 217, .16);
+      margin-bottom: 22px;
+    }
+
+    .intro-facts {
+      display: grid;
+      gap: 14px;
+    }
+
+    .intro-fact {
+      padding: 17px 18px;
+      border-radius: 16px;
+      border: 1px solid rgba(143, 165, 204, .18);
+      background: rgba(255,255,255,.045);
+      display: grid;
+      gap: 6px;
+    }
+
+    .intro-label {
+      color: var(--cyan);
+      font-size: .72rem;
+      font-weight: 900;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+    }
+
+    .center {
+      text-align: center;
+      justify-items: center;
+    }
+
+    .status-path {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      gap: 10px;
+      align-items: center;
+      margin-top: 12px;
+    }
+
+    .status {
+      padding: 14px;
+      border-radius: 14px;
+      background: rgba(255,255,255,.045);
+      border: 1px solid rgba(143, 165, 204, .18);
+      text-align: center;
+      font-weight: 900;
+    }
+
+    .arrow {
+      color: var(--muted);
+      font-size: 1.5rem;
+      line-height: 1;
+    }
+
+    @media (max-width: 980px) {
+      body { overflow: auto; }
+      .deck { height: auto; min-height: 100vh; }
+      .slide {
+        position: relative;
+        min-height: auto;
+        display: none;
+        padding-bottom: 88px;
+      }
+      .slide.active { display: block; }
+      .slide-inner { min-height: auto; align-content: start; }
+      .grid-2, .grid-4, .intro-layout, .concept-layout, .orchestrator-compare, .architecture, .flow-line, .demo-grid, .outcomes, .ui-tabs {
+        grid-template-columns: 1fr;
+      }
+      .concept-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+      .concept-map {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+      .broker-stage {
+        min-height: auto;
+      }
+      .broker-stage::before,
+      .message-pulse {
+        display: none;
+      }
+      .broker-parts,
+      .term-strip {
+        grid-template-columns: 1fr;
+        min-height: auto;
+      }
+      .broker-part,
+      .broker-part.exchange {
+        min-height: auto;
+        text-align: left;
+        justify-items: start;
+      }
+      .rabbit-routing-map {
+        min-height: auto;
+        display: grid;
+        gap: 12px;
+        padding: 14px;
+      }
+      .rabbit-routing-map svg,
+      .routing-legend {
+        display: none;
+      }
+      .rabbit-node,
+      .rabbit-node.publisher,
+      .rabbit-node.broker-core,
+      .rabbit-node.routing-decision,
+      .rabbit-node.queue,
+      .rabbit-node.consumer {
+        position: static;
+        width: 100%;
+        min-width: 0;
+        min-height: auto;
+        text-align: left;
+        justify-items: start;
+      }
+      .flow-node::after { display: none; }
+      .broker { min-height: 220px; }
+      h1 { font-size: clamp(2.5rem, 11vw, 4.6rem); }
+      h2 { font-size: clamp(2rem, 8.5vw, 3.4rem); }
+    }
+
+    @media (max-width: 620px) {
+      :root { --safe-x: 16px; --safe-y: 18px; --radius: 16px; }
+      .concept-map, .concept-grid, .grid-3, .grid-4, .term-strip { grid-template-columns: 1fr; }
+      .panel { padding: 16px; }
+      .broker-stage { padding: 14px; }
+      .foot { display: none; }
+      .nav { bottom: 12px; }
+      .nav button { width: 38px; height: 38px; }
+      .counter { min-width: 58px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: .001ms !important;
+        transition-duration: .001ms !important;
+        scroll-behavior: auto !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="deck" aria-live="polite">
+    <div class="foot">Microservices Teaching Demo</div>
+
+    <section class="slide active" data-title="Microservices Demo">
+      <div class="slide-inner cover-slide">
+        <span class="eyebrow">Teaching Project</span>
+        <h1 class="cover-title">Microservices Demo</h1>
+        <p class="cover-subtitle">Event-driven checkout with RabbitMQ, Docker Compose, and inspectable service boundaries.</p>
+        <div class="cover-meta">
+          <span class="tag">Microservices</span>
+          <span class="tag">RabbitMQ</span>
+          <span class="tag">Event choreography</span>
+          <span class="tag">Classroom demo</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide" data-title="About presenter">
+      <div class="slide-inner intro-layout">
+        <div class="profile-card">
+          <div>
+            <h2>Doga Babacan</h2>
+            </br>
+            <p class="lead">Software Developer</p>
+          </div>
+        </div>
+        <div class="intro-facts">
+          <span class="eyebrow">Before We Start</span>
+          <h2>Who is presenting?</h2>
+          <div class="intro-fact">
+            <span class="intro-label">Education</span>
+            <h3>Izmir Institute of Technology</h3>
+            <ul class="small clean-list">
+              <li>B.Sc. Mechanical Engineering</li>
+              <li>M.Sc. Software Engineering and Data Science, non-thesis program</li>
+            </ul>
+          </div>
+          <div class="intro-fact">
+            <span class="intro-label">Current role</span>
+            <h3>Software Developer at Bilgi Group since 2023</h3>
+              <ul class="small clean-list">
+                <li>Worked on backend systems, AWS-hosted services, compliance and banking modules</li>
+                <li>Worked on small practical AI/image-processing tooling project</li>
+              </ul>
+          </div>
+          <div class="intro-fact">
+            <span class="intro-label">Today</span>
+            <h3>We will inspect behavior, not only architecture diagrams.</h3>
+            <p class="small">The goal is to connect service boundaries, RabbitMQ queues, and failure behavior.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide" data-title="Why microservices">
+      <div class="slide-inner">
+        <div class="concept-layout">
+          <div class="concept-statement">
+            <span class="eyebrow">Core Idea</span>
+            <h2>Microservices make system boundaries visible.</h2>
+            <p class="lead">Students can inspect what each service owns, how services communicate, and why the system can be temporarily between states.</p>
+            <div class="ownership-list" aria-label="Service ownership examples">
+              <div class="ownership-row"><strong>Order Service</strong><span><span class="ownership-arrow">-></span> owns order state</span></div>
+              <div class="ownership-row"><strong>Inventory Service</strong><span><span class="ownership-arrow">-></span> owns stock reservation</span></div>
+              <div class="ownership-row"><strong>Payment Service</strong><span><span class="ownership-arrow">-></span> owns payment result</span></div>
+              <div class="ownership-row"><strong>Notification Service</strong><span><span class="ownership-arrow">-></span> owns customer messages</span></div>
+              <div class="ownership-row"><strong>Analytics Service</strong><span><span class="ownership-arrow">-></span> observes events</span></div>
+            </div>
+          </div>
+          <div class="concept-grid">
+            <div class="concept-card">
+              <div class="concept-icon">01</div>
+              <h3>One responsibility</h3>
+              <p class="small">Each service owns one part of the checkout behavior:
+                <span class="help-term tip-left">order lifecycle
+                  <span class="help-dot" tabindex="0" role="button" aria-describedby="order-lifecycle-tip">?</span>
+                  <span class="help-tooltip" id="order-lifecycle-tip" role="tooltip">Lifecycle means the states an order passes through over time. In this demo an order starts as created, then becomes completed or cancelled.</span>
+                </span>,
+                stock, payment, notification, or analytics.
+              </p>
+            </div>
+            <div class="concept-card green">
+              <div class="concept-icon green">02</div>
+              <h3>Independent runtime</h3>
+              <p class="small">Each service is a separate container. Students can stop one container and observe whether work fails, waits, or catches up later.</p>
+            </div>
+            <div class="concept-card violet">
+              <div class="concept-icon violet">03</div>
+              <h3>Communication choice</h3>
+              <p class="small">The gateway uses synchronous HTTP to start the order. After that, services communicate asynchronously through RabbitMQ events.</p>
+            </div>
+            <div class="concept-card amber">
+              <div class="concept-icon amber">04</div>
+              <h3>Eventual consistency</h3>
+              <p class="small">
+                Services do not all update at the exact same moment. They become consistent after events are delivered and processed.
+              </p>
+              <div class="state-strip" aria-label="Order state example">
+                <div class="state-pill">created</div>
+                <div class="arrow">→</div>
+                <div class="state-branch">
+                  <div class="state-pill good">completed</div>
+                  <div class="state-pill bad">cancelled</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide" data-title="Architecture">
+      <div class="slide-inner">
+        <span class="eyebrow">Project Architecture</span>
+        <h2>The gateway starts the request; the exchange connects event publishers to event consumers.</h2>
+        <div class="panel">
+          <div class="architecture-caption">
+            <span class="legend-item"><span class="legend-swatch green"></span>publishes / sends an event</span>
+            <span class="legend-item"><span class="legend-swatch"></span>receives / consumes an event</span>
+          </div>
+          <div class="architecture">
+            <div class="service-stack">
+              <div class="service">
+                <strong>Client</strong>
+                <span class="event-chip">POST /checkout</span>
+                <span class="small">The browser UI on localhost:3000 where students send demo checkout requests.</span>
+              </div>
+              <div class="service">
+                <strong>API Gateway</strong>
+                <span class="small">The single backend entry point for the UI. It validates the request and calls Order Service over HTTP.</span>
+              </div>
+              <div class="service event-role">
+                <strong>Order Service</strong>
+                <div class="role-line"><span class="role-label pub">Sends</span><span class="event-list"><span class="event-row good">order.created</span></span></div>
+                <div class="small">Starts the async workflow after the order exists.</div>
+              </div>
+            </div>
+            <div class="broker">
+              <div class="broker-content">
+                <div class="broker-icon">X</div>
+                <h3>Topic exchange</h3>
+                <p class="small">ecommerce_events</p>
+                <span class="event-chip">routing keys</span>
+              </div>
+            </div>
+            <div class="service-stack">
+              <div class="service event-role">
+                <strong>Inventory Service</strong>
+                <div class="role-line"><span class="role-label recv">Gets</span><span class="event-list"><span class="event-row neutral">order.created</span></span></div>
+                <div class="role-line"><span class="role-label pub">Sends</span><span class="event-list"><span class="event-row good">inventory.reserved</span><span class="event-row bad">inventory.failed</span></span></div>
+              </div>
+              <div class="service event-role">
+                <strong>Payment Service</strong>
+                <div class="role-line"><span class="role-label recv">Gets</span><span class="event-list"><span class="event-row neutral">inventory.reserved</span></span></div>
+                <div class="role-line"><span class="role-label pub">Sends</span><span class="event-list"><span class="event-row good">payment.completed</span><span class="event-row bad">payment.failed</span></span></div>
+              </div>
+              <div class="service event-role">
+                <strong>Order Service</strong>
+                <div class="role-line"><span class="role-label recv">Gets</span><span class="event-list"><span class="event-row good">payment.completed</span><span class="event-row bad">payment.failed</span><span class="event-row bad">inventory.failed</span></span></div>
+                <div class="role-line"><span class="role-label pub">Sends</span><span class="event-list"><span class="event-row good">order.completed</span><span class="event-row bad">order.cancelled</span></span></div>
+              </div>
+              <div class="service event-role">
+                <strong>Notification Service</strong>
+                <div class="role-line"><span class="role-label recv">Gets</span><span class="event-list"><span class="event-row good">payment.completed</span><span class="event-row bad">payment.failed</span><span class="event-row bad">inventory.failed</span></span></div>
+                <div class="small">Shows customer-facing outcome messages.</div>
+              </div>
+              <div class="service event-role">
+                <strong>Analytics Service</strong>
+                <div class="role-line"><span class="role-label recv">Gets</span><span class="event-list"><span class="event-row neutral"># wildcard</span></span></div>
+                <div class="small">Observes all events without changing the checkout flow.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide" data-title="Orchestrator">
+      <div class="slide-inner">
+        <span class="eyebrow">Architecture Pattern</span>
+        <h2>An orchestrator coordinates the process; this demo uses event choreography instead.</h2>
+        <div class="orchestrator-compare">
+          <div class="compare-panel">
+            <div>
+              <h3>Orchestration</h3>
+              <p class="small">A central workflow service controls the sequence, calls the participating services, and decides what happens next.</p>
+            </div>
+            <div class="pattern-visual" aria-label="Orchestrator diagram">
+              <svg viewBox="0 0 420 240" preserveAspectRatio="none" aria-hidden="true">
+                <path class="diagram-line command" d="M210 72 L210 54" />
+                <path class="diagram-line command" d="M148 120 L112 120" />
+                <path class="diagram-line command" d="M272 120 L308 120" />
+                <path class="diagram-line command" d="M210 168 L210 186" />
+              </svg>
+              <div class="pattern-node hub center">Order<br>Workflow<br>Orchestrator</div>
+              <div class="pattern-node top">Inventory</div>
+              <div class="pattern-node left">Payment</div>
+              <div class="pattern-node right">Notification</div>
+              <div class="pattern-node bottom">Analytics</div>
+            </div>
+            <div class="compare-list">
+              <div class="compare-kv">
+                <div class="kv-item"><span class="kv-label">Control</span><span class="small">Centralized</span></div>
+                <div class="kv-item"><span class="kv-label">Workflow</span><span class="small">Explicit steps</span></div>
+                <div class="kv-item"><span class="kv-label">Errors</span><span class="small">Handled centrally</span></div>
+                <div class="kv-item"><span class="kv-label">Best for</span><span class="small">Strict business processes</span></div>
+              </div>
+              <div class="compare-item"><span class="dot amber"></span><span>Example: loan approval, insurance claim, travel booking, or order fulfillment where one process must coordinate many steps.</span></div>
+            </div>
+          </div>
+
+          <div class="compare-panel demo-used">
+            <div>
+              <h3>Choreography in this demo</h3>
+              <p class="small">There is no central workflow controller. Each service reacts independently to events it receives from RabbitMQ.</p>
+            </div>
+            <div class="pattern-visual" aria-label="Choreography diagram">
+              <svg viewBox="0 0 420 240" preserveAspectRatio="none" aria-hidden="true">
+                <path class="diagram-line event" d="M210 54 L210 72" />
+                <path class="diagram-line event" d="M112 120 L148 120" />
+                <path class="diagram-line event" d="M308 120 L272 120" />
+                <path class="diagram-line receive" d="M210 168 L210 186" />
+              </svg>
+              <div class="pattern-node exchange center">RabbitMQ<br>Exchange</div>
+              <div class="pattern-node top">Order</div>
+              <div class="pattern-node left">Inventory</div>
+              <div class="pattern-node right">Payment</div>
+              <div class="pattern-node bottom">Notification</div>
+            </div>
+            <div class="compare-list">
+              <div class="compare-kv">
+                <div class="kv-item"><span class="kv-label">Control</span><span class="small">Decentralized</span></div>
+                <div class="kv-item"><span class="kv-label">Workflow</span><span class="small">Emerges from events</span></div>
+                <div class="kv-item"><span class="kv-label">Errors</span><span class="small">Handled by services</span></div>
+                <div class="kv-item"><span class="kv-label">Best for</span><span class="small">Event-driven systems</span></div>
+              </div>
+              <div class="compare-item"><span class="dot green"></span><span>In this demo, Order publishes <span class="tag">order.created</span>; Inventory, Payment, Notification, and Analytics react through their own queues.</span></div>
+            </div>
+          </div>
+        </div>
+        <p class="source-note">Reference framing adapted from GeeksforGeeks, <a href="https://www.geeksforgeeks.org/system-design/orchestration-vs-choreography/">Orchestration vs. Choreography in Microservices</a>.</p>
+      </div>
+    </section>
+
+    <section class="slide" data-title="RabbitMQ structure">
+      <div class="slide-inner">
+        <span class="eyebrow">RabbitMQ Structure</span>
+        <h2>A broker receives messages, routes by key, and lets services consume from queues.</h2>
+        <div class="rabbit-structure">
+          <div class="rabbit-routing-map" aria-label="Animated RabbitMQ routing diagram">
+            <svg viewBox="0 0 1000 350" preserveAspectRatio="none" aria-hidden="true">
+              <defs>
+                <path id="route-publish" d="M 160 178 C 245 178, 275 175, 345 175" />
+                <path id="route-exchange" d="M 470 175 C 510 175, 535 175, 575 175" />
+                <path id="route-inventory" d="M 625 175 C 690 112, 730 86, 805 86" />
+                <path id="route-analytics" d="M 625 175 C 700 178, 742 178, 805 178" />
+                <path id="route-notification" d="M 625 175 C 690 236, 730 262, 805 262" />
+              </defs>
+
+              <use href="#route-publish" class="route-line main" />
+              <use href="#route-exchange" class="route-line main" />
+              <use href="#route-inventory" class="route-line match" />
+              <use href="#route-analytics" class="route-line match" />
+              <use href="#route-notification" class="route-line muted" />
+
+              <circle r="9" fill="#23c7d9" class="route-dot">
+                <animateMotion dur="5.8s" repeatCount="indefinite" keyTimes="0;0.34;1" keyPoints="0;1;1" calcMode="linear">
+                  <mpath href="#route-publish" />
+                </animateMotion>
+                <animate attributeName="opacity" values="0;1;1;0;0" keyTimes="0;0.06;0.30;0.36;1" dur="5.8s" repeatCount="indefinite" />
+              </circle>
+              <circle r="9" fill="#23c7d9" class="route-dot">
+                <animateMotion dur="5.8s" repeatCount="indefinite" keyTimes="0;0.36;0.52;1" keyPoints="0;0;1;1" calcMode="linear">
+                  <mpath href="#route-exchange" />
+                </animateMotion>
+                <animate attributeName="opacity" values="0;0;1;1;0;0" keyTimes="0;0.34;0.38;0.50;0.56;1" dur="5.8s" repeatCount="indefinite" />
+              </circle>
+              <circle r="8" fill="#f1aa3d" class="route-dot match">
+                <animateMotion dur="5.8s" repeatCount="indefinite" keyTimes="0;0.52;0.76;1" keyPoints="0;0;1;1" calcMode="linear">
+                  <mpath href="#route-inventory" />
+                </animateMotion>
+                <animate attributeName="opacity" values="0;0;1;1;0" keyTimes="0;0.52;0.58;0.76;1" dur="5.8s" repeatCount="indefinite" />
+              </circle>
+              <circle r="8" fill="#f1aa3d" class="route-dot match">
+                <animateMotion dur="5.8s" repeatCount="indefinite" keyTimes="0;0.56;0.80;1" keyPoints="0;0;1;1" calcMode="linear">
+                  <mpath href="#route-analytics" />
+                </animateMotion>
+                <animate attributeName="opacity" values="0;0;1;1;0" keyTimes="0;0.56;0.62;0.80;1" dur="5.8s" repeatCount="indefinite" />
+              </circle>
+            </svg>
+
+            <div class="rabbit-node publisher">
+              <span class="part-label">Publisher</span>
+              <div class="node-title">Order Service</div>
+              <div class="node-caption">Posts a fact after creating an order.</div>
+              <span class="event-chip green">order.created</span>
+            </div>
+
+            <div class="rabbit-node broker-core">
+              <span class="part-label">RabbitMQ broker</span>
+              <div class="exchange-badge">X</div>
+              <div class="node-title">Exchange</div>
+              <span class="event-chip">ecommerce_events</span>
+              <div class="node-caption">The broker receives the message. The exchange decides where copies should go.</div>
+            </div>
+
+            <div class="rabbit-node routing-decision">
+              <span class="part-label">Routing key</span>
+              <div class="node-title">order.created</div>
+              <div class="node-caption">
+                RabbitMQ compares this key with each queue's
+                <span class="help-term">binding rule
+                  <span class="help-dot" tabindex="0" role="button" aria-describedby="binding-rule-tip">?</span>
+                  <span class="help-tooltip" id="binding-rule-tip" role="tooltip">A binding rule connects an exchange to a queue. If the message routing key matches the rule, RabbitMQ places a copy of the message in that queue.</span>
+                </span>.
+              </div>
+            </div>
+
+            <div class="rabbit-node queue q1">
+              <span class="part-label">Queue</span>
+              <div class="node-title">Inventory inbox</div>
+              <div class="queue-name">binding: order.created</div>
+              <div class="node-caption">Receives a copy. Inventory consumes it.</div>
+            </div>
+
+            <div class="rabbit-node queue q2">
+              <span class="part-label">Queue</span>
+              <div class="node-title">Analytics inbox</div>
+              <div class="queue-name">binding: #</div>
+              <div class="node-caption">Wildcard binding receives a copy.</div>
+            </div>
+
+            <div class="rabbit-node queue q3">
+              <span class="part-label">Queue</span>
+              <div class="node-title">Notification inbox</div>
+              <div class="queue-name">binding: payment.*</div>
+              <div class="node-caption">No match, so no copy is delivered.</div>
+            </div>
+
+            <div class="routing-legend">
+              <span class="legend-item"><span class="legend-swatch"></span>publish to broker</span>
+              <span class="legend-item"><span class="legend-swatch amber"></span>route matching copies</span>
+              <span class="legend-item"><span class="legend-swatch green"></span>queues wait until services read</span>
+            </div>
+          </div>
+          <div class="term-strip">
+            <div class="term-mini">
+              <h3>Broker</h3>
+              <p class="small">The middle system. RabbitMQ accepts messages and delivers them without services calling each other directly.</p>
+            </div>
+            <div class="term-mini">
+              <h3>Exchange</h3>
+              <p class="small">The router. Publishers send to the exchange, not directly to every queue.</p>
+            </div>
+            <div class="term-mini">
+              <h3>Routing key</h3>
+              <p class="small">The message label, for example <span class="tag">order.created</span>. Bindings compare against it.</p>
+            </div>
+            <div class="term-mini">
+              <h3>Queue</h3>
+              <p class="small">A durable inbox for a service. If the consumer is stopped, messages wait here.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide" data-title="Happy path">
+      <div class="slide-inner">
+        <span class="eyebrow">Successful Checkout</span>
+        <h2>Success is a chain of published facts.</h2>
+        <div class="panel flow">
+          <div class="flow-line">
+            <div class="flow-node">
+              <h3>API Gateway</h3>
+              <span class="event-chip">HTTP request</span>
+              <p class="small">Calls Order Service synchronously.</p>
+            </div>
+            <div class="flow-node">
+              <h3>Order</h3>
+              <span class="event-chip green">order.created</span>
+              <p class="small">Stores status as created.</p>
+            </div>
+            <div class="flow-node">
+              <h3>Inventory</h3>
+              <span class="event-chip green">inventory.reserved</span>
+              <p class="small">Reduces stock.</p>
+            </div>
+            <div class="flow-node">
+              <h3>Payment</h3>
+              <span class="event-chip green">payment.completed</span>
+              <p class="small">Payment succeeds.</p>
+            </div>
+            <div class="flow-node">
+              <h3>Order + Notification</h3>
+              <span class="event-chip green">order.completed</span>
+              <p class="small">Order reaches the completed outcome.</p>
+            </div>
+          </div>
+        </div>
+        <div class="status-path">
+          <div class="status">created</div>
+          <div class="arrow">→</div>
+          <div class="status ok">completed</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide" data-title="Failure paths">
+      <div class="slide-inner">
+        <span class="eyebrow">Failure Flows</span>
+        <h2>Not all failures happen at the same place.</h2>
+        <div class="outcomes">
+          <div class="outcome warning">
+            <span class="event-chip amber">out of stock</span>
+            <h3>Inventory rejects the order</h3>
+            <p class="small">Order was created, but Inventory publishes <span class="tag">inventory.failed</span>. Order Service consumes that failure and marks the order cancelled.</p>
+            <div class="status-path"><div class="status">created</div><div class="arrow">→</div><div class="status bad">cancelled</div></div>
+          </div>
+          <div class="outcome failure">
+            <span class="event-chip red">payment failed</span>
+            <h3>Compensation restores stock</h3>
+            <p class="small">Payment publishes <span class="tag">payment.failed</span> and requests <span class="tag">inventory.release_requested</span>. Inventory adds reserved stock back.</p>
+            <div class="status-path"><div class="status">reserved</div><div class="arrow">→</div><div class="status ok">released</div></div>
+          </div>
+          <div class="outcome failure">
+            <span class="event-chip red">invalid request</span>
+            <h3>Rejected before the workflow</h3>
+            <p class="small">The gateway returns 400. No order exists and no RabbitMQ message is published, because the event flow never starts.</p>
+            <div class="status bad">no order, no event</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide" data-title="Stopped services">
+      <div class="slide-inner">
+        <span class="eyebrow">Catch-up Behavior</span>
+        <h2>Stopped services behave differently depending on their position.</h2>
+        <div class="demo-grid">
+          <div class="demo">
+            <span class="event-chip amber">Notification stopped</span>
+            <h3>Downstream consumer is offline</h3>
+            <p class="small">Checkout can still complete. RabbitMQ holds messages in <span class="tag">notification_service_events_queue</span> until Notification starts again.</p>
+            <div class="terminal">docker compose stop notification-service<br>docker compose start notification-service</div>
+          </div>
+          <div class="demo">
+            <span class="event-chip amber">Inventory stopped</span>
+            <h3>Middle consumer is offline</h3>
+            <p class="small">Order is created, then waits. The <span class="tag">inventory_service_order_created_queue</span> stacks messages until Inventory restarts.</p>
+            <div class="terminal">docker compose stop inventory-service<br>docker compose start inventory-service</div>
+          </div>
+          <div class="demo">
+            <span class="event-chip red">Order stopped</span>
+            <h3>Synchronous entry dependency is offline</h3>
+            <p class="small">API Gateway cannot create the order, so it returns 502. No <span class="tag">order.created</span> event exists for RabbitMQ to hold.</p>
+            <div class="terminal">docker compose stop order-service<br>docker compose start order-service</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide" data-title="Teaching UI">
+      <div class="slide-inner">
+        <span class="eyebrow">How To Teach It</span>
+        <h2>Use the project UI, RabbitMQ, and logs together.</h2>
+        <div class="ui-tabs">
+          <div class="tab-card">
+            <span class="event-chip">Expected Scenario Flow</span>
+            <h3>Scripted explanation</h3>
+            <p class="small">Shows the expected path after a checkout request. Good for introducing the sequence.</p>
+          </div>
+          <div class="tab-card">
+            <span class="event-chip green">Live Broker Lab</span>
+            <h3>Real queue state</h3>
+            <p class="small">Shows Ready, Unacked, and Consumers from RabbitMQ. Good for catch-up demos.</p>
+          </div>
+          <div class="tab-card">
+            <span class="event-chip">Flow Guide</span>
+            <h3>Static reference</h3>
+            <p class="small">Explains every possible flow without sending requests or stopping containers.</p>
+          </div>
+          <div class="tab-card">
+            <span class="event-chip">Service Explorer</span>
+            <h3>Responsibilities</h3>
+            <p class="small">Connects each service to the messages it publishes and consumes.</p>
+          </div>
+        </div>
+        <div class="terminal">docker compose logs -f notification-service<br>docker compose logs -f inventory-service<br>docker compose logs -f order-service</div>
+      </div>
+    </section>
+
+    <section class="slide" data-title="Takeaways">
+      <div class="slide-inner center">
+        <span class="eyebrow">Final Takeaways</span>
+        <h2>Students should leave with three architecture instincts.</h2>
+        <div class="grid-3">
+          <div class="panel flat">
+            <div class="dot green"></div>
+            <h3>Events decouple services</h3>
+            <p class="small">A publisher announces what happened. Consumers decide whether they care.</p>
+          </div>
+          <div class="panel flat">
+            <div class="dot amber"></div>
+            <h3>Queues make waiting visible</h3>
+            <p class="small">Stopped downstream consumers do not erase work. The queue can hold it.</p>
+          </div>
+          <div class="panel flat">
+            <div class="dot red"></div>
+            <h3>Synchronous calls fail immediately</h3>
+            <p class="small">If the service needed before the first event is down, the workflow cannot begin.</p>
+          </div>
+        </div>
+        <p class="lead">The best classroom discussion is not “which tool is best,” but “which boundary creates which behavior?”</p>
+      </div>
+    </section>
+  </main>
+
+  <nav class="nav" aria-label="Slide navigation">
+    <button type="button" id="prev" aria-label="Previous slide">‹</button>
+    <div class="counter" id="counter">1 / 11</div>
+    <button type="button" id="next" aria-label="Next slide">›</button>
+  </nav>
+  <div class="progress" aria-hidden="true"><span id="progress"></span></div>
+
+  <script>
+    const slides = Array.from(document.querySelectorAll(".slide"));
+    const counter = document.querySelector("#counter");
+    const progress = document.querySelector("#progress");
+    let index = 0;
+
+    function clampSlide(value) {
+      return Math.max(0, Math.min(slides.length - 1, value));
+    }
+
+    function render() {
+      slides.forEach((slide, slideIndex) => {
+        slide.classList.toggle("active", slideIndex === index);
+      });
+      counter.textContent = `${index + 1} / ${slides.length}`;
+      progress.style.width = `${((index + 1) / slides.length) * 100}%`;
+      const title = slides[index].dataset.title || `Slide ${index + 1}`;
+      history.replaceState(null, "", `#${index + 1}-${title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`);
+    }
+
+    function go(delta) {
+      index = clampSlide(index + delta);
+      render();
+    }
+
+    document.querySelector("#prev").addEventListener("click", () => go(-1));
+    document.querySelector("#next").addEventListener("click", () => go(1));
+
+    window.addEventListener("keydown", (event) => {
+      if (["ArrowRight", "PageDown", " "].includes(event.key)) {
+        event.preventDefault();
+        go(1);
+      }
+      if (["ArrowLeft", "PageUp"].includes(event.key)) {
+        event.preventDefault();
+        go(-1);
+      }
+      if (event.key === "Home") {
+        index = 0;
+        render();
+      }
+      if (event.key === "End") {
+        index = slides.length - 1;
+        render();
+      }
+    });
+
+    const hashMatch = window.location.hash.match(/^#(\d+)/);
+    if (hashMatch) {
+      index = clampSlide(Number(hashMatch[1]) - 1);
+    }
+    render();
+  </script>
+</body>
+</html>
