@@ -1748,111 +1748,301 @@
         margin-bottom: 2px;
       }
 
-      /* RabbitMQ routing diagram */
-      .diagram-routing {
+      /* RabbitMQ routing animation */
+      .routing-explainer-card {
         display: grid;
-        grid-template-columns: 180px 1fr 240px;
         gap: 16px;
-        align-items: center;
-        margin-top: 16px;
-        background: rgba(0, 0, 0, 0.4);
+        margin-top: 14px;
+        background: rgba(0, 0, 0, 0.36);
         border: 1px solid var(--border);
         border-radius: 12px;
-        padding: 20px;
-        overflow-x: auto;
+        padding: 16px;
+        overflow: hidden;
       }
-      @media (max-width: 768px) {
-        .diagram-routing {
-          grid-template-columns: 1fr;
-          text-align: center;
-          gap: 20px;
-        }
-        .diagram-connector {
-          height: 60px;
-          margin: 10px 0;
-        }
-        .arrow-flow {
-          transform: rotate(90deg);
-          height: 60px !important;
-        }
+      .routing-steps {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 8px;
       }
-      .diagram-node {
-        background: rgba(30, 41, 59, 0.8);
-        border: 1px solid var(--border-light);
-        border-radius: 8px;
-        padding: 10px 14px;
+      .routing-step-pill {
+        min-height: 42px;
         display: flex;
-        flex-direction: column;
-        gap: 4px;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-      }
-      .diagram-node.exchange-node {
-        border-color: var(--primary);
-        box-shadow: 0 0 15px rgba(59, 130, 246, 0.15);
-      }
-      .diagram-node.queue-node {
-        border-color: #a855f7;
-        box-shadow: 0 0 15px rgba(168, 85, 247, 0.15);
-        margin-bottom: 4px;
-      }
-      .node-type {
-        font-size: 0.7rem;
-        font-weight: 600;
-        color: var(--text-muted);
-        letter-spacing: 0.1em;
-      }
-      .node-name {
-        font-family: 'JetBrains Mono', monospace;
-        font-size: 0.8rem;
-        color: #fff;
-        word-break: break-all;
-      }
-      .diagram-connector {
-        position: relative;
-        display: flex;
-        flex-direction: column;
         align-items: center;
         justify-content: center;
-        height: 100%;
+        text-align: center;
+        padding: 8px 10px;
+        border: 1px solid rgba(96, 165, 250, 0.24);
+        border-radius: 8px;
+        background: rgba(59, 130, 246, 0.07);
+        color: #bfdbfe;
+        font-size: 0.78rem;
+        font-weight: 600;
+        line-height: 1.25;
       }
-      .routing-key-tag {
-        background: rgba(245, 158, 11, 0.15);
-        border: 1px solid rgba(245, 158, 11, 0.3);
+      .diagram-routing {
+        display: grid;
+        grid-template-columns: minmax(160px, 190px) minmax(260px, 1fr) minmax(260px, 340px);
+        gap: 18px;
+        align-items: center;
+        min-width: 0;
+      }
+      .routing-node {
+        position: relative;
+        min-width: 0;
+        border: 1px solid var(--border-light);
+        border-radius: 10px;
+        background: rgba(30, 41, 59, 0.82);
+        box-shadow: 0 8px 22px rgba(0, 0, 0, 0.24);
+      }
+      .routing-exchange-node {
+        padding: 16px;
+        border-color: rgba(59, 130, 246, 0.58);
+        box-shadow: 0 0 22px rgba(59, 130, 246, 0.14);
+      }
+      .routing-node-type {
+        display: block;
+        color: var(--text-muted);
+        font-size: 0.68rem;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        margin-bottom: 5px;
+      }
+      .routing-node-name {
+        display: block;
+        color: #fff;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.82rem;
+        line-height: 1.35;
+        overflow-wrap: anywhere;
+      }
+      .routing-event-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        max-width: 100%;
+        margin-top: 12px;
+        padding: 6px 8px;
+        border: 1px solid rgba(245, 158, 11, 0.34);
+        border-radius: 7px;
+        background: rgba(245, 158, 11, 0.1);
         color: var(--warning);
         font-family: 'JetBrains Mono', monospace;
         font-size: 0.75rem;
-        padding: 4px 8px;
-        border-radius: 6px;
-        z-index: 2;
-        white-space: nowrap;
-        box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        overflow-wrap: anywhere;
       }
-      .arrow-flow {
-        width: 100%;
-        height: 50px;
-        position: absolute;
-        top: 50%;
-        transform: translateY(-50%);
-        display: flex;
+      .routing-path-stage {
+        position: relative;
+        min-height: 178px;
+        display: grid;
         align-items: center;
-        justify-content: center;
-        z-index: 1;
+        overflow: hidden;
       }
-      .flow-svg {
-        width: 100%;
-        height: 100%;
+      .routing-key-tag {
+        justify-self: center;
+        align-self: start;
+        background: rgba(245, 158, 11, 0.15);
+        border: 1px solid rgba(245, 158, 11, 0.32);
+        color: var(--warning);
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.75rem;
+        padding: 5px 9px;
+        border-radius: 7px;
+        z-index: 3;
+        white-space: nowrap;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.25);
       }
-      .diagram-queues {
-        display: flex;
-        flex-direction: column;
+      .routing-lanes {
+        position: absolute;
+        inset: 32px 0 10px;
+        display: grid;
+        grid-template-rows: repeat(3, 1fr);
+        gap: 8px;
+      }
+      .routing-lane {
+        position: relative;
+      }
+      .routing-lane::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 50%;
+        height: 2px;
+        background: linear-gradient(90deg, rgba(59,130,246,0.74), rgba(168,85,247,0.74));
+        opacity: 0.58;
+      }
+      .routing-lane::after {
+        content: '';
+        position: absolute;
+        right: 0;
+        top: calc(50% - 4px);
+        width: 8px;
+        height: 8px;
+        border-top: 2px solid rgba(168,85,247,0.86);
+        border-right: 2px solid rgba(168,85,247,0.86);
+        transform: rotate(45deg);
+      }
+      .event-token {
+        position: absolute;
+        left: 0;
+        top: calc(50% - 10px);
+        z-index: 2;
+        width: 20px;
+        height: 20px;
+        border-radius: 6px;
+        border: 1px solid rgba(245,158,11,0.58);
+        background: rgba(245,158,11,0.95);
+        box-shadow: 0 0 16px rgba(245,158,11,0.36);
+        animation: routeToken 3.6s cubic-bezier(0.45, 0, 0.2, 1) infinite;
+      }
+      .event-token::before {
+        content: '';
+        position: absolute;
+        left: 5px;
+        right: 5px;
+        top: 6px;
+        height: 1px;
+        background: rgba(15,23,42,0.76);
+        box-shadow: 0 4px 0 rgba(15,23,42,0.58);
+      }
+      .routing-lane:nth-child(2) .event-token { animation-delay: 0.18s; }
+      .routing-lane:nth-child(3) .event-token { animation-delay: 0.36s; }
+      @keyframes routeToken {
+        0% { transform: translateX(0) scale(0.82); opacity: 0; }
+        12% { opacity: 1; }
+        72% { transform: translateX(calc(100% - 20px)) scale(1); opacity: 1; }
+        84% { transform: translateX(calc(100% - 20px)) scale(0.82); opacity: 0; }
+        100% { transform: translateX(calc(100% - 20px)) scale(0.82); opacity: 0; }
+      }
+      .routing-queues {
+        display: grid;
         gap: 10px;
+        min-width: 0;
       }
-      .flow-dash {
-        stroke-dasharray: 6, 6;
-        animation: march 4s linear infinite;
+      .routing-queue-card {
+        position: relative;
+        min-width: 0;
+        display: grid;
+        gap: 5px;
+        padding: 11px 12px;
+        border: 1px solid rgba(168, 85, 247, 0.34);
+        border-radius: 9px;
+        background: rgba(30, 41, 59, 0.82);
+        box-shadow: 0 0 17px rgba(168, 85, 247, 0.12);
+        overflow: hidden;
+        animation: matchedQueueGlow 3.6s ease infinite;
       }
-      @keyframes march {
-        to { stroke-dashoffset: -40; }
+      .routing-queue-card:nth-child(2) { animation-delay: 0.18s; }
+      .routing-queue-card:nth-child(3) { animation-delay: 0.36s; }
+      .routing-queue-card::before {
+        content: '';
+        position: absolute;
+        inset: 0 auto 0 0;
+        width: 3px;
+        background: #a855f7;
+      }
+      @keyframes matchedQueueGlow {
+        0%, 78%, 100% { border-color: rgba(168, 85, 247, 0.34); background: rgba(30, 41, 59, 0.82); }
+        42%, 58% { border-color: rgba(245, 158, 11, 0.52); background: rgba(50, 39, 18, 0.74); }
+      }
+      .routing-queue-owner {
+        color: #fff;
+        font-family: 'Outfit', sans-serif;
+        font-size: 0.88rem;
+        font-weight: 600;
+      }
+      .routing-queue-name {
+        color: var(--text-muted);
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.72rem;
+        line-height: 1.35;
+        overflow-wrap: anywhere;
+      }
+      .routing-queue-binding {
+        justify-self: start;
+        color: #c4b5fd;
+        background: rgba(168,85,247,0.1);
+        border: 1px solid rgba(168,85,247,0.2);
+        border-radius: 999px;
+        padding: 3px 7px;
+        font-size: 0.69rem;
+        font-family: 'JetBrains Mono', monospace;
+      }
+      body.reduce-animations .event-token,
+      body.reduce-animations .routing-queue-card {
+        animation: none !important;
+      }
+      body.reduce-animations .event-token {
+        left: auto;
+        right: 0;
+        opacity: 1;
+        transform: none;
+      }
+      body.reduce-animations .routing-queue-card {
+        border-color: rgba(245, 158, 11, 0.52);
+        background: rgba(50, 39, 18, 0.74);
+      }
+      @media (max-width: 900px) {
+        .routing-steps {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+        .diagram-routing {
+          grid-template-columns: 1fr;
+          gap: 14px;
+        }
+        .routing-path-stage {
+          min-height: 148px;
+        }
+        .routing-lanes {
+          inset: 24px 0 8px;
+          width: auto;
+          transform: none;
+          grid-template-rows: none;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 18px;
+        }
+        .routing-lane::before {
+          left: 50%;
+          right: auto;
+          top: 0;
+          bottom: 0;
+          width: 2px;
+          height: auto;
+          background: linear-gradient(180deg, rgba(59,130,246,0.74), rgba(168,85,247,0.74));
+        }
+        .routing-lane::after {
+          right: auto;
+          left: calc(50% - 4px);
+          top: auto;
+          bottom: 0;
+          transform: rotate(135deg);
+        }
+        .event-token {
+          left: calc(50% - 10px);
+          top: 0;
+          animation-name: routeTokenVertical;
+        }
+        @keyframes routeTokenVertical {
+          0% { transform: translateY(0) scale(0.82); opacity: 0; }
+          12% { opacity: 1; }
+          72% { transform: translateY(116px) scale(1); opacity: 1; }
+          84% { transform: translateY(116px) scale(0.82); opacity: 0; }
+          100% { transform: translateY(116px) scale(0.82); opacity: 0; }
+        }
+        body.reduce-animations .event-token {
+          top: auto;
+          right: auto;
+          bottom: 0;
+          left: calc(50% - 10px);
+        }
+      }
+      @media (max-width: 560px) {
+        .routing-steps {
+          grid-template-columns: 1fr;
+        }
+        .routing-explainer-card {
+          padding: 12px;
+        }
       }
     </style>
   </head>
@@ -2032,47 +2222,49 @@
           <div id="routing-explainer" style="display: none; margin-bottom: 24px;">
             <div style="font-family: 'Outfit', sans-serif; font-weight: 600; color: #fff; margin-bottom: 4px; font-size: 1.05rem;">Routing & Inboxes (Example)</div>
             <div style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 12px;">
-              <span data-glossary="rabbitmq">RabbitMQ</span> routes one published event to multiple service inboxes based on the <span data-glossary="routingKey">routing key</span> binding.
+              One labeled event is published to the exchange. <span data-glossary="rabbitmq">RabbitMQ</span> copies it into queues whose bindings match the <span data-glossary="routingKey">routing key</span>.
             </div>
-            
-            <div class="diagram-routing">
-              <!-- Exchange Node -->
-              <div class="diagram-node exchange-node">
-                <span class="node-type">EXCHANGE</span>
-                <span class="node-name">ecommerce_events</span>
+
+            <div class="routing-explainer-card" aria-label="Animated RabbitMQ routing example for payment.failed">
+              <div class="routing-steps">
+                <div class="routing-step-pill">1. publish once</div>
+                <div class="routing-step-pill">2. match bindings</div>
+                <div class="routing-step-pill">3. copy to queues</div>
+                <div class="routing-step-pill">4. services consume from their own inboxes</div>
               </div>
-              
-              <!-- Connection Channel -->
-              <div class="diagram-connector">
-                <div class="routing-key-tag">Key: <code>payment.failed</code></div>
-                <div class="arrow-flow">
-                  <svg class="flow-svg" viewBox="0 0 160 80" preserveAspectRatio="none">
-                    <defs>
-                      <linearGradient id="flow-grad" x1="0%" y1="0%" x2="100%" y2="0%">
-                        <stop offset="0%" stop-color="var(--primary)" stop-opacity="0.8" />
-                        <stop offset="100%" stop-color="#a855f7" stop-opacity="0.8" />
-                      </linearGradient>
-                    </defs>
-                    <path class="flow-dash" d="M 0 40 Q 80 0 160 15" fill="none" stroke="url(#flow-grad)" stroke-width="2" />
-                    <path class="flow-dash" d="M 0 40 L 160 40" fill="none" stroke="url(#flow-grad)" stroke-width="2" />
-                    <path class="flow-dash" d="M 0 40 Q 80 80 160 65" fill="none" stroke="url(#flow-grad)" stroke-width="2" />
-                  </svg>
+
+              <div class="diagram-routing" id="routing-animation">
+                <div class="routing-node routing-exchange-node">
+                  <span class="routing-node-type">EXCHANGE</span>
+                  <span class="routing-node-name">ecommerce_events</span>
+                  <span class="routing-event-badge">event: payment.failed</span>
                 </div>
-              </div>
-              
-              <!-- Queue Nodes -->
-              <div class="diagram-queues">
-                <div class="diagram-node queue-node">
-                  <span class="node-type">QUEUE</span>
-                  <span class="node-name" style="font-size: 0.72rem;">notification_service_events_queue</span>
+
+                <div class="routing-path-stage">
+                  <div class="routing-key-tag">routing key: <code>payment.failed</code></div>
+                  <div class="routing-lanes" aria-hidden="true">
+                    <div class="routing-lane"><span class="event-token"></span></div>
+                    <div class="routing-lane"><span class="event-token"></span></div>
+                    <div class="routing-lane"><span class="event-token"></span></div>
+                  </div>
                 </div>
-                <div class="diagram-node queue-node">
-                  <span class="node-type">QUEUE</span>
-                  <span class="node-name" style="font-size: 0.72rem;">order_service_checkout_failed_queue</span>
-                </div>
-                <div class="diagram-node queue-node">
-                  <span class="node-type">QUEUE</span>
-                  <span class="node-name" style="font-size: 0.72rem;">analytics_service_events_queue</span>
+
+                <div class="routing-queues">
+                  <div class="routing-queue-card">
+                    <span class="routing-queue-owner">Notification Service</span>
+                    <span class="routing-queue-name">notification_service_events_queue</span>
+                    <span class="routing-queue-binding">binding: payment.failed</span>
+                  </div>
+                  <div class="routing-queue-card">
+                    <span class="routing-queue-owner">Order Service</span>
+                    <span class="routing-queue-name">order_service_checkout_failed_queue</span>
+                    <span class="routing-queue-binding">binding: payment.failed</span>
+                  </div>
+                  <div class="routing-queue-card">
+                    <span class="routing-queue-owner">Analytics Service</span>
+                    <span class="routing-queue-name">analytics_service_events_queue</span>
+                    <span class="routing-queue-binding">binding: #</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -3246,7 +3438,12 @@
       }
 
       togglePresentationEl.addEventListener('change', applyClassroomToggles);
-      toggleReduceAnimationsEl.addEventListener('change', applyClassroomToggles);
+      toggleReduceAnimationsEl.addEventListener('change', () => {
+        applyClassroomToggles();
+        if (!toggleReduceAnimationsEl.checked && currentView === 'technical') {
+          restartRoutingAnimation();
+        }
+      });
       toggleExpandTechEl.addEventListener('change', applyClassroomToggles);
       applyClassroomToggles();
 
@@ -3887,8 +4084,29 @@
 
       // Show routing explainer only in technical view
       const routingExplainerEl = document.getElementById('routing-explainer');
+      const routingAnimationEl = document.getElementById('routing-animation');
+      function restartRoutingAnimation() {
+        if (!routingAnimationEl || toggleReduceAnimationsEl.checked) {
+          return;
+        }
+
+        const animatedItems = routingAnimationEl.querySelectorAll('.event-token, .routing-queue-card');
+        animatedItems.forEach((item) => {
+          item.style.animation = 'none';
+        });
+
+        void routingAnimationEl.offsetWidth;
+
+        animatedItems.forEach((item) => {
+          item.style.animation = '';
+        });
+      }
+
       function updateRoutingExplainerVisibility() {
         routingExplainerEl.style.display = currentView === 'technical' ? 'block' : 'none';
+        if (currentView === 'technical') {
+          restartRoutingAnimation();
+        }
       }
       document.body.dataset.view = currentView;
       updateRoutingExplainerVisibility();
@@ -3901,6 +4119,7 @@
         statusEl.textContent = "Processing...";
         statusEl.className = "status-badge";
         outputEl.textContent = JSON.stringify(payload, null, 2);
+        restartRoutingAnimation();
         
         timelineContainer.innerHTML = '<div style="text-align: center; color: var(--primary); padding: 40px 0; font-family: monospace;">Processing Event Stream...</div>';
         analyticsPanel.classList.remove('active');
